@@ -1,0 +1,349 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  JAVA_VERSION: '11'
+  DOTNET_VERSION: '6.0'
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.changes.outputs.python }}
+      cpp: ${{ steps.changes.outputs.cpp }}
+      java: ${{ steps.changes.outputs.java }}
+      csharp: ${{ steps.changes.outputs.csharp }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            python:
+              - '**/*.py'
+              - 'requirements.txt'
+              - 'pyproject.toml'
+              - 'templates/python/**'
+            cpp:
+              - '**/*.c'
+              - '**/*.cpp'
+              - '**/*.h'
+              - '**/*.hpp'
+              - '**/Makefile*'
+              - 'templates/c-cpp/**'
+            java:
+              - '**/*.java'
+              - '**/pom.xml'
+              - '**/build.gradle*'
+              - 'templates/java/**'
+            csharp:
+              - '**/*.cs'
+              - '**/*.csproj'
+              - '**/*.sln'
+              - 'templates/csharp/**'
+
+  python-quality:
+    name: Python Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python == 'true'
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy bandit safety pytest pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run Ruff (linting and formatting)
+        run: |
+          ruff check .
+          ruff format --check .
+      
+      - name: Run MyPy (type checking)
+        run: mypy . --ignore-missing-imports
+      
+      - name: Run Bandit (security)
+        run: bandit -r . -f json -o bandit-report.json || true
+      
+      - name: Run Safety (dependency check)
+        run: safety check --json --output safety-report.json || true
+      
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=term-missing
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: matrix.python-version == '3.11'
+        with:
+          file: ./coverage.xml
+          flags: python
+          name: python-coverage
+
+  cpp-quality:
+    name: C/C++ Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cpp == 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ clang-tidy cppcheck valgrind make
+      
+      - name: Run clang-tidy
+        run: |
+          find . -name "*.c" -o -name "*.cpp" | xargs clang-tidy -checks='-*,readability-*,bugprone-*,clang-analyzer-*,performance-*,portability-*,cert-*,hicpp-*' -- -I./include
+      
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --std=c11 --std=c++17 --platform=unix64 --suppress=missingIncludeSystem --error-exitcode=1 --xml --xml-version=2 . 2> cppcheck-report.xml || true
+      
+      - name: Build with strict flags
+        run: |
+          if [ -f Makefile ]; then
+            make clean
+            make CFLAGS="-Wall -Wextra -Werror -Wpedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Wpedantic -std=c++17"
+          fi
+      
+      - name: Run tests
+        run: |
+          if [ -f Makefile ] && grep -q "test:" Makefile; then
+            make test
+          fi
+
+  java-quality:
+    name: Java Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.java == 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      
+      - name: Run Maven build
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -f pom.xml ]; then
+            mvn clean compile test-compile
+          fi
+      
+      - name: Run tests
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -f pom.xml ]; then
+            mvn test
+          fi
+      
+      - name: Run Checkstyle
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ -f pom.xml ]; then
+            mvn checkstyle:check || true
+          fi
+
+  csharp-quality:
+    name: C# Quality Checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.csharp == 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Restore dependencies
+        run: |
+          if [ -f *.csproj ] || [ -f *.sln ]; then
+            dotnet restore
+          fi
+      
+      - name: Build
+        run: |
+          if [ -f *.csproj ] || [ -f *.sln ]; then
+            dotnet build --no-restore
+          fi
+      
+      - name: Run tests
+        run: |
+          if [ -f *.csproj ] || [ -f *.sln ]; then
+            dotnet test --no-build --verbosity normal
+          fi
+      
+      - name: Check formatting
+        run: |
+          if [ -f *.csproj ] || [ -f *.sln ]; then
+            dotnet format --verify-no-changes
+          fi
+
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Cache SonarQube packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      
+      - name: Run SonarQube Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ ! -z "$SONAR_TOKEN" ]; then
+            npx sonarqube-scanner
+          else
+            echo "SONAR_TOKEN not set, skipping SonarQube analysis"
+          fi
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run setup script
+        run: |
+          python scripts/setup_project.py test-project python --target-dir ./test-output
+      
+      - name: Verify project creation
+        run: |
+          test -d ./test-output/test-project || (echo "Project creation failed" && exit 1)
+          test -f ./test-output/test-project/README.md || (echo "README.md not created" && exit 1)
+          echo "✅ Project creation test passed"
+
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [python-quality, cpp-quality, java-quality, csharp-quality, security-scan, integration-tests]
+    if: always()
+    
+    steps:
+      - name: Check build status
+        run: |
+          echo "Build Status Summary:"
+          echo "Python Quality: ${{ needs.python-quality.result }}"
+          echo "C++ Quality: ${{ needs.cpp-quality.result }}"
+          echo "Java Quality: ${{ needs.java-quality.result }}"
+          echo "C# Quality: ${{ needs.csharp-quality.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+          echo "Integration Tests: ${{ needs.integration-tests.result }}"
+          
+          # Fail if any critical job failed
+          if [[ "${{ needs.python-quality.result }}" == "failure" ]] || 
+             [[ "${{ needs.cpp-quality.result }}" == "failure" ]] || 
+             [[ "${{ needs.java-quality.result }}" == "failure" ]] || 
+             [[ "${{ needs.csharp-quality.result }}" == "failure" ]] || 
+             [[ "${{ needs.integration-tests.result }}" == "failure" ]]; then
+            echo "❌ One or more critical jobs failed"
+            exit 1
+          else
+            echo "✅ All jobs completed successfully"
+          fi

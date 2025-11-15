@@ -1,0 +1,47 @@
+{
+    "recommendations": [
+        // Core quality and analysis
+        "sonarsource.sonarlint-vscode",
+        "ms-vscode.makefile-tools",
+        
+        // Python
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        
+        // C/C++
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cmake-tools",
+        
+        // C#/.NET
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        
+        // Java
+        "redhat.java",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-gradle",
+        "vscjava.vscode-maven",
+        
+        // General development
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.powershell",
+        
+        // Git and collaboration
+        "eamodio.gitlens",
+        "github.copilot",
+        "github.copilot-chat",
+        
+        // Testing and debugging
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer"
+    ],
+    "unwantedRecommendations": [
+        "ms-python.flake8",
+        "ms-python.pylint",
+        "ms-python.autopep8"
+    ]
+}

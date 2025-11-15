@@ -1,0 +1,172 @@
+{
+    "folders": [
+        {
+            "name": "AI Development Workspace",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+        "python.terminal.activateEnvironment": true,
+        // Multi-language formatting and linting
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        },
+        // Language-specific settings
+        "[python]": {
+            "editor.defaultFormatter": "charliermarsh.ruff",
+            "editor.formatOnSave": true,
+            "editor.codeActionsOnSave": {
+                "source.fixAll.ruff": "explicit",
+                "source.organizeImports.ruff": "explicit"
+            }
+        },
+        "[c]": {
+            "editor.defaultFormatter": "ms-vscode.cpptools",
+            "editor.formatOnSave": true
+        },
+        "[cpp]": {
+            "editor.defaultFormatter": "ms-vscode.cpptools",
+            "editor.formatOnSave": true
+        },
+        "[csharp]": {
+            "editor.defaultFormatter": "ms-dotnettools.csharp",
+            "editor.formatOnSave": true
+        },
+        "[java]": {
+            "editor.defaultFormatter": "redhat.java",
+            "editor.formatOnSave": true
+        },
+        "[json]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[yaml]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[markdown]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        // SonarQube integration
+        "sonarlint.ls.javaHome": "C:\\Program Files\\Microsoft\\jdk-21.0.8.9-hotspot",
+        "java.jdt.ls.java.home": "C:\\Program Files\\Microsoft\\jdk-21.0.8.9-hotspot",
+        "java.home": "C:\\Program Files\\Microsoft\\jdk-21.0.8.9-hotspot",
+        "sonarlint.enableVerboseLogs": false,
+        "sonarlint.disableTelemetry": true,
+        "sonarlint.connectedMode.automatic.setup": false,
+        "sonarlint.analyzeOpenFilesOnly": false,
+        "sonarlint.enableAutomaticAnalysis": true,
+        "sonarlint.connectedMode.servers": [],
+        "sonarlint.excludeFiles": [
+            "**/test_*.py",
+            "**/*_test.py",
+            "**/tests/**",
+            "**/Example_*/**",
+            "**/node_modules/**",
+            "**/target/**",
+            "**/bin/**",
+            "**/obj/**"
+        ],
+        "sonarlint.rules": {
+            "python:S3776": {
+                "level": "on",
+                "parameters": {
+                    "threshold": "15"
+                }
+            },
+            "java:S3776": {
+                "level": "on",
+                "parameters": {
+                    "threshold": "15"
+                }
+            },
+            "cpp:S3776": {
+                "level": "on",
+                "parameters": {
+                    "threshold": "15"
+                }
+            }
+        },
+        // General editor settings
+        "editor.rulers": [
+            88,
+            120
+        ],
+        "editor.wordWrap": "bounded",
+        "editor.wordWrapColumn": 120,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        // Terminal settings
+        "terminal.integrated.defaultProfile.windows": "PowerShell",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.defaultProfile.osx": "zsh",
+        // Git settings
+        "git.enableSmartCommit": true,
+        "git.confirmSync": false,
+        "git.autofetch": true,
+        // File exclusions
+        "files.exclude": {
+            "**/__pycache__": true,
+            "**/.mypy_cache": true,
+            "**/.pytest_cache": true,
+            "**/build": true,
+            "**/dist": true,
+            "**/*.egg-info": true,
+            "**/node_modules": true,
+            "**/target": true,
+            "**/bin/Debug": true,
+            "**/bin/Release": true,
+            "**/obj": true,
+            "**/.vs": true
+        },
+        // Auto-save settings
+        "files.autoSave": "onFocusChange",
+        "problems.decorations.enabled": true
+    },
+    "extensions": {
+        "recommendations": [
+            // Core quality and analysis
+            "sonarsource.sonarlint-vscode",
+            "ms-vscode.makefile-tools",
+            // Python
+            "charliermarsh.ruff",
+            "ms-python.python",
+            "ms-python.vscode-pylance",
+            "ms-python.debugpy",
+            // C/C++
+            "ms-vscode.cpptools",
+            "ms-vscode.cpptools-extension-pack",
+            "ms-vscode.cmake-tools",
+            // C#
+            "ms-dotnettools.csharp",
+            "ms-dotnettools.vscode-dotnet-runtime",
+            // Java
+            "redhat.java",
+            "vscjava.vscode-java-pack",
+            "vscjava.vscode-gradle",
+            "vscjava.vscode-maven",
+            // General development
+            "esbenp.prettier-vscode",
+            "ms-vscode.vscode-json",
+            "redhat.vscode-yaml",
+            "ms-vscode.powershell",
+            // Git and collaboration
+            "eamodio.gitlens",
+            "github.copilot",
+            "github.copilot-chat"
+        ],
+        "unwantedRecommendations": [
+            "ms-python.flake8",
+            "ms-python.pylint"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": []
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": []
+    }
+}

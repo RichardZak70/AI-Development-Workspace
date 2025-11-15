@@ -1,0 +1,215 @@
+# Quality Configuration for AI Development Workspace Template
+# Comprehensive quality standards for multi-language AI-assisted development
+
+[tool.ruff]
+# Set maximum line length to 120 (standard for modern development)
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable comprehensive quality rules for AI-assisted development
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "I",     # isort
+    "N",     # pep8-naming
+    "C90",   # mccabe complexity
+    "RUF",   # ruff-specific rules
+    "S",     # flake8-bandit (security)
+    "T20",   # flake8-print
+    "PTH",   # flake8-use-pathlib
+]
+
+ignore = [
+    "E501",    # Line too long (let formatter handle)
+    "B008",    # Do not perform function call in argument defaults
+    "B904",    # Within `except` clause, raise exceptions with `raise ... from err`
+    "S101",    # Use of assert detected (allow in tests)
+    "T201",    # print found (allow in scripts and examples)
+]
+
+# Enable automatic fixing for selected rules
+fixable = [
+    "F",     # Pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "I",     # isort
+    "UP",    # pyupgrade
+    "SIM",   # flake8-simplify
+]
+
+# Exclude files from linting
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".venv",
+    "venv",
+    "env",
+    "Example_*",
+    "test_*.py",
+    "*_test.py",
+    "tests/",
+    "*.spec",
+    "node_modules",
+    "target",
+    "bin",
+    "obj",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow specific patterns in different file types
+"scripts/*.py" = ["T201", "S603", "S607"]  # Scripts can use print and subprocess
+"setup*.py" = ["T201", "S603", "S607"]
+"build*.py" = ["T201", "S603", "S607"]
+"**/conftest.py" = ["S101"]  # Allow assert in pytest config
+"test_*.py" = ["S101", "T201"]  # Allow assert and print in tests
+
+[tool.ruff.lint.mccabe]
+# Reasonable complexity limit for AI-assisted development
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+# Maximum arguments for functions
+max-args = 8
+
+[tool.mypy]
+# Type checking configuration - STRICT MODE for quality
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_optional = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+
+# Ignore missing imports for external libraries (can be customized per project)
+[[tool.mypy.overrides]]
+module = ["paramiko.*", "gpio.*", "spidev.*", "matplotlib.*", "numpy.*"]
+ignore_missing_imports = true
+
+[tool.bandit]
+# Security linting configuration
+exclude_dirs = ["tests", "test", "Example_*"]
+skips = ["B101"]  # Skip assert statements in tests
+
+[tool.pytest.ini_options]
+# Test configuration
+minversion = "6.0"
+testpaths = ["tests", "."]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+
+[tool.coverage.run]
+# Coverage configuration
+source = ["."]
+omit = [
+    "test_*",
+    "*/test_*",
+    "Example_*/*",
+    ".venv/*",
+    "venv/*",
+    "env/*",
+    "build/*",
+    "dist/*",
+    "node_modules/*",
+    "target/*",
+    "bin/*",
+    "obj/*",
+]
+
+[tool.coverage.report]
+# Coverage reporting
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+fail_under = 80
+
+[build-system]
+# Build system specification
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Project metadata template (to be customized per project)
+name = "ai-development-workspace"
+description = "AI Development Workspace Template with Multi-Language Support"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "AI Development Team"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: C",
+    "Programming Language :: C++",
+    "Programming Language :: Java",
+    "Programming Language :: C#",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dynamic = ["version"]
+requires-python = ">=3.11"
+dependencies = [
+    "ruff>=0.1.6",
+    "mypy>=1.7.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.0.0",
+    "bandit>=1.7.5",
+    "safety>=2.3.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+]
+ai = [
+    "openai>=1.0.0",
+    "anthropic>=0.18.0",
+]
+data = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+]
+web = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "requests>=2.31.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/ai-development-workspace"
+Repository = "https://github.com/yourusername/ai-development-workspace"
+Issues = "https://github.com/yourusername/ai-development-workspace/issues"

@@ -1,0 +1,225 @@
+# Pre-commit hooks configuration for AI Development Workspace
+# Ensures ALL code is quality checked before any commit across multiple languages
+
+repos:
+  # Python: Ruff for linting and formatting (fastest Python linter)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        name: Ruff Linter
+      - id: ruff-format
+        name: Ruff Formatter
+
+  # Python: MyPy for type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+        args: [--ignore-missing-imports, --check-untyped-defs, --strict-optional]
+        name: MyPy Type Checker
+
+  # General code quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        name: Trim Trailing Whitespace
+      - id: end-of-file-fixer
+        name: Fix End of Files
+      - id: check-yaml
+        name: Check YAML
+      - id: check-json
+        name: Check JSON
+      - id: check-toml
+        name: Check TOML
+      - id: check-xml
+        name: Check XML
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+        name: Check Large Files
+      - id: check-merge-conflict
+        name: Check Merge Conflicts
+      - id: check-case-conflict
+        name: Check Case Conflicts
+      - id: check-ast
+        name: Check Python AST
+      - id: check-docstring-first
+        name: Check Docstring First
+      - id: debug-statements
+        name: Debug Statements (Python)
+      - id: name-tests-test
+        name: Tests naming
+      - id: requirements-txt-fixer
+        name: Fix requirements.txt
+
+  # Python security and quality
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: [-r, --skip=B101, --severity-level=medium]
+        name: Bandit Security Linter
+
+  # C/C++ code formatting
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v17.0.6
+    hooks:
+      - id: clang-format
+        files: \.(c|h|cpp|hpp|cc|cxx)$
+        args: [--style=Google]
+        name: Clang Format (C/C++)
+
+  # Java code formatting
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.11.0
+    hooks:
+      - id: pretty-format-java
+        args: [--autofix]
+        name: Google Java Format
+
+  # C# code formatting
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: .NET Format
+        entry: dotnet
+        language: system
+        args: [format, --include]
+        files: \.cs$
+        pass_filenames: true
+
+  # JSON/YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        files: \.(json|yaml|yml|md)$
+        name: Prettier (JSON/YAML/Markdown)
+
+  # Custom local hooks for strict quality control
+  - repo: local
+    hooks:
+      # Strict C/C++ compilation check
+      - id: c-cpp-strict-compile-check
+        name: C/C++ Strict Compilation Check
+        entry: bash
+        language: system
+        files: \.(c|cpp|h|hpp)$
+        pass_filenames: true
+        args:
+          - -c
+          - |
+            echo "Running strict C/C++ compilation check..."
+            for file in "$@"; do
+              if [[ "$file" == *.c ]]; then
+                echo "Checking C file: $file"
+                gcc -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion \
+                    -Wformat=2 -Wuninitialized -Wshadow -Wstrict-prototypes \
+                    -Wmissing-prototypes -Wcast-qual -Wcast-align -Wwrite-strings \
+                    -std=c11 -O2 -fsyntax-only -I. "$file" || {
+                  echo "❌ C compilation check failed for $file"
+                  exit 1
+                }
+              elif [[ "$file" == *.cpp ]]; then
+                echo "Checking C++ file: $file"
+                g++ -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion \
+                    -Wformat=2 -Wuninitialized -Wshadow -Wcast-qual -Wcast-align \
+                    -Wwrite-strings -std=c++17 -O2 -fsyntax-only -I. "$file" || {
+                  echo "❌ C++ compilation check failed for $file"
+                  exit 1
+                }
+              fi
+              echo "✅ $file passed compilation check"
+            done
+
+      # Python cognitive complexity check
+      - id: python-complexity-check
+        name: Python Cognitive Complexity Check
+        entry: bash
+        language: system
+        files: \.py$
+        pass_filenames: true
+        args:
+          - -c
+          - |
+            echo "Running cognitive complexity check..."
+            python -c "
+            import ast
+            import sys
+            
+            class ComplexityVisitor(ast.NodeVisitor):
+                def __init__(self):
+                    self.complexity = 0
+                    self.function_name = ''
+                
+                def visit_FunctionDef(self, node):
+                    self.function_name = node.name
+                    old_complexity = self.complexity
+                    self.complexity = 0
+                    self.generic_visit(node)
+                    if self.complexity > 15:
+                        print(f'❌ Function {self.function_name} has complexity {self.complexity} (max 15)')
+                        sys.exit(1)
+                    self.complexity = old_complexity
+                
+                def visit_If(self, node):
+                    self.complexity += 1
+                    self.generic_visit(node)
+                
+                def visit_For(self, node):
+                    self.complexity += 1
+                    self.generic_visit(node)
+                
+                def visit_While(self, node):
+                    self.complexity += 1
+                    self.generic_visit(node)
+                
+                def visit_Try(self, node):
+                    self.complexity += 1
+                    self.generic_visit(node)
+            
+            for filename in sys.argv[1:]:
+                if filename.endswith('.py') and not filename.startswith('test_'):
+                    print(f'Checking complexity: {filename}')
+                    with open(filename, 'r') as f:
+                        try:
+                            tree = ast.parse(f.read())
+                            visitor = ComplexityVisitor()
+                            visitor.visit(tree)
+                            print(f'✅ {filename} passed complexity check')
+                        except SyntaxError as e:
+                            print(f'❌ Syntax error in {filename}: {e}')
+                            sys.exit(1)
+            " "$@"
+
+      # AI development best practices check
+      - id: ai-development-check
+        name: AI Development Best Practices
+        entry: bash
+        language: system
+        files: \.(py|c|cpp|java|cs)$
+        pass_filenames: true
+        args:
+          - -c
+          - |
+            echo "Checking AI development best practices..."
+            for file in "$@"; do
+              # Check for TODO/FIXME in production code
+              if grep -q "TODO\|FIXME\|XXX" "$file" && [[ "$file" != *test* ]]; then
+                echo "⚠️  Warning: $file contains TODO/FIXME/XXX comments"
+              fi
+              
+              # Check for proper error handling patterns
+              if [[ "$file" == *.py ]]; then
+                if grep -q "except:" "$file"; then
+                  echo "❌ $file uses bare except clause - specify exception types"
+                  exit 1
+                fi
+              fi
+              
+              echo "✅ $file passed AI development checks"
+            done
