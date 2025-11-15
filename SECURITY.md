@@ -15,9 +15,9 @@ We actively support the following versions of AI Development Workspace with secu
 
 **For Critical Security Issues:**
 - 🚨 **DO NOT** create a public GitHub issue
-- 📧 Email: security@yourproject.com
+- 📧 Email: richard_zak@hotmail.com
 - 🔒 Use PGP encryption if possible (key available on request)
-- 🕐 Expected response time: 24-48 hours
+- 🕐 Expected response time: up to 1 week depending on my availability
 
 ### What to Include
 
@@ -32,7 +32,7 @@ When reporting a security vulnerability, please include:
 
 ### Security Scope
 
-We consider the following in scope for security reports:
+Consider the following in scope for security reports:
 
 #### Code Generation and AI Integration
 - **Prompt Injection**: Malicious prompts that could generate harmful code
@@ -233,10 +233,10 @@ In case of a security incident:
 
 ## Contact Information
 
-- **Security Email**: security@yourproject.com
+- **Security Email**: richard_zak@hotmail.com
 - **Security Team**: @security-team
 - **GPG Key**: Available on request
-- **Response Time**: 24-48 hours for initial response
+- **Response Time**: up to 1 week depending on my availability
 
 ## Acknowledgments
 

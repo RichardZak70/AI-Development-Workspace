@@ -1,6 +1,6 @@
 # Contributing to AI Development Workspace
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+This repo has been created to allow contributing to this project to be as easy and transparent as possible, whether it's:
 
 - Reporting a bug
 - Discussing the current state of the code
@@ -12,7 +12,7 @@ We love your input! We want to make contributing to this project as easy and tra
 
 ## Development Process
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+GitHub is used to host code, to track issues and feature requests, as well as accept pull requests.
 
 ### Pull Requests
 
