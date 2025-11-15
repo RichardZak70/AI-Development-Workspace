@@ -1,8 +1,8 @@
 # AI Development Workspace Template
 
 This repo is currently being developed - as new projects that are being worked on are completed, any lessons, tools, etc learned will make their way to this
-repo.  This repo uses other public repo's information and AI to create these files and comments.  Where other people's work has been referenced, recognition of the author
-has been give.
+repo.  This repo uses other related public repos to create some of these files and comments.  Where other people's work has been referenced, recognition of the author
+is stated where applicable.
 
 Current repo's that have been reviewed and referenced - 
 
