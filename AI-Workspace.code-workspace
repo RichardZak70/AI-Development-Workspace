@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../AI-Chatbot"
+		},
+		{
+			"path": "../idx-sw-tools-CM5_Bootloader"
+		},
+		{
+			"path": "../idx-sw-tools-CM5Bx_Testing"
+		},
+		{
+			"path": "../MCP-Orchestration"
+		},
+		{
+			"path": "../PMI-Chuck-Positioner"
+		},
+		{
+			"path": "../QuickBooks-Automation"
+		},
+		{
+			"path": "../RZ-Opportunity-Engine"
+		}
+	],
+	"settings": {}
+}

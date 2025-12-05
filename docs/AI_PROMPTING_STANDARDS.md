@@ -9,12 +9,11 @@ All prompts must be:
 **Prompt structure:**
 
 1. Role
-2. Objective
-3. Constraints
-4. Procedure
-5. Output format
-6. Optional examples
-
+1. Objective
+1. Constraints
+1. Procedure
+1. Output format
+1. Optional examples
 
 ## Example schema in `config/prompts.yaml`
 

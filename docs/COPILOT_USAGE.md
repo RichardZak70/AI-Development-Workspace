@@ -5,10 +5,10 @@ To get consistent behavior:
 
 - Use structured "Copilot Instruction" comments immediately above the code.
 - Use different patterns for:
-	- new code,
-	- refactoring,
-	- debugging,
-	- documentation.
+  - new code,
+  - refactoring,
+  - debugging,
+  - documentation.
 
 ## New code
 
