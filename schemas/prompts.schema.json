@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/RichardZak70/AI-Core-Standards/schemas/prompts.schema.json",
+  "title": "PromptsConfig",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["system", "user_template"],
+    "additionalProperties": false,
+    "properties": {
+      "system": { "type": "string", "minLength": 1 },
+      "user_template": { "type": "string", "minLength": 1 }
+    }
+  }
+}

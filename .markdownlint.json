@@ -23,14 +23,7 @@
   "MD011": true,
   "MD012": true,
 
-  "MD013": {
-    "line_length": 100,
-    "heading_line_length": 80,
-    "code_blocks": false,
-    "tables": false,
-    "strict": false,
-    "stern": false
-  },
+  "MD013": false,
 
   "MD014": true,
   "MD018": true,
@@ -48,9 +41,7 @@
   },
   "MD027": true,
   "MD028": true,
-  "MD029": {
-    "style": "one"
-  },
+  "MD029": false,
   "MD030": {
     "ul_single": 1,
     "ul_multi": 1,

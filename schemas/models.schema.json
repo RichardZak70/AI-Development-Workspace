@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/RichardZak70/AI-Core-Standards/schemas/models.schema.json",
+  "title": "ModelsConfig",
+  "type": "object",
+  "required": ["default", "providers"],
+  "additionalProperties": false,
+  "properties": {
+    "default": {
+      "type": "object",
+      "required": ["provider", "model", "temperature", "max_tokens"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "temperature": { "type": "number", "minimum": 0.0, "maximum": 2.0 },
+        "max_tokens": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["default_model"],
+        "additionalProperties": false,
+        "properties": {
+          "default_model": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

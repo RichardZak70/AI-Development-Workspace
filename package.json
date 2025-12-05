@@ -1,0 +1,17 @@
+{
+  "name": "ai-core-standards",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint:md": "markdownlint \"docs/**/*.md\"",
+    "validate:schema": "node scripts/ajv-validate.mjs",
+    "validate:all": "npm run lint:md && npm run validate:schema"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0",
+    "markdownlint-cli": "^0.46.0"
+  }
+}
