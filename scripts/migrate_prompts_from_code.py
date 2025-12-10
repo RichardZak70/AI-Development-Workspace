@@ -34,7 +34,7 @@ def looks_like_prompt_var(name: str) -> bool:
     return bool(PROMPT_VAR_PATTERN.search(name))
 
 
-def extract_prompts_from_source(source: str) -> List[Tuple[str, str]]:
+def extract_prompts_from_source(source: str) -> List[Tuple[str, str]]:  # noqa: C901
     """Parse *source* and return list of (variable_name, string_value) tuples."""
     prompts: List[Tuple[str, str]] = []
     try:
@@ -82,7 +82,7 @@ def scan_directory(root: Path) -> Dict[str, Dict[str, str]]:
         prompts = extract_prompts_from_source(source)
         if prompts:
             rel = py_file.relative_to(root).as_posix()
-            results[rel] = {name: value for name, value in prompts}
+            results[rel] = dict(prompts)
     return results
 
 

@@ -4,16 +4,26 @@ This repository centralizes the conventions, templates, and tooling that govern 
 
 ## What Is Inside
 
-- **docs/** – authoritative standards that define how we prompt, structure data, validate schemas, lint, and review projects.
-- **templates/** – jump-start files for configs, prompt catalogs, editor settings, and data layouts.
-- **scripts/** – lightweight automation to audit existing projects and migrate embedded prompts into managed configs.
+- **docs/** – authoritative standards for prompts, structure, data, schemas, linting, and reviews.
+- **templates/** – starter configs (prompts/models), editor settings, and data layouts.
+- **scripts/** – audit and validation tooling:
+  - `audit_ai_project.py` for structure;
+  - `ajv-validate.mjs` for schema checks;
+  - `validate_config.py` for Pydantic + JSON Schema validation with `--json` output;
+  - `fix_audit_findings.py` to orchestrate audits with cross-repo support;
+  - stubs for prompt extraction/merging, LLM usage, data layout, tooling, docs, and a consolidated check.
 - **LICENSE** – usage terms for the entire standard set.
 
 ## Getting Started
 
-1. Read `docs/PROJECT_STRUCTURE.md` to understand the baseline folder and artifact requirements.
-2. Adopt the prompting and Copilot standards before authoring any new automation or agent flows.
-3. Copy the files in `templates/` into new projects, then tailor them while keeping the documented defaults intact.
-4. Run `scripts/audit_ai_project.py` periodically to verify compliance and surface drift early.
+1. Read `docs/PROJECT_STRUCTURE.md` and `docs/AI_PROMPTING_STANDARDS.md` to understand required layout and prompting rules.
+2. Install toolchain: Node 18+ (`npm ci`) and Python 3.11+ (see `.pre-commit-config.yaml` for hooks and `.venv` layout).
+3. Copy `templates/` into new projects, tailoring configs while keeping documented defaults intact.
+4. Run audits:
+   - `python scripts/audit_ai_project.py` (structure);
+   - `node scripts/ajv-validate.mjs` (schema);
+   - `python scripts/validate_config.py --json` (schema + Pydantic);
+   - `python scripts/fix_audit_findings.py --run --fail-on-missing` to orchestrate available audits in sequence.
+5. For existing projects, add both the standards repo and the target repo to a multi-root workspace so Copilot can cross-reference standards when fixing findings.
 
 > Treat this repository as a living artifact. Submit pull requests for any net-new rules, keeping the documentation, templates, and automation in sync.

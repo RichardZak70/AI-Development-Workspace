@@ -30,7 +30,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install yamllint
-        run: python -m pip install --upgrade pip yamllint pre-commit ruff mypy
+        run: python -m pip install --upgrade pip yamllint pre-commit ruff mypy pytest
 
       - name: Run yamllint
         run: python -m yamllint .
@@ -46,6 +46,9 @@ jobs:
 
       - name: Validate JSON schemas with Ajv
         run: npm run validate:schema
+
+      - name: Run pytest
+        run: python -m pytest tests
 
   powershell-lint:
     runs-on: windows-latest

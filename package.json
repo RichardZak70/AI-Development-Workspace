@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "Standards, templates, and audit tooling for AI projects.",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "lint:md": "markdownlint \"docs/**/*.md\" \"README.md\"",
+    "lint:md:fix": "markdownlint --fix \"docs/**/*.md\" \"README.md\"",
     "validate:schema": "node scripts/ajv-validate.mjs",
     "validate:all": "npm run lint:md && npm run validate:schema"
   },
