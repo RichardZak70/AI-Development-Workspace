@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, Tuple, Type
+from typing import Any, Dict, Iterable, Mapping, Tuple, Type, cast
 
 import yaml
 from jsonschema import Draft202012Validator
@@ -60,15 +60,23 @@ def read_file_text(path: Path) -> str:
 
 def load_yaml(path: Path) -> Dict[str, Any]:
     data = yaml.safe_load(read_file_text(path))
-    return data or {}
+    if data is None:
+        return {}
+    if not isinstance(data, Mapping):
+        raise SystemExit(f"YAML root must be a mapping: {path}")
+    mapping_data = cast(Mapping[str, Any], data)
+    result: Dict[str, Any] = {}
+    for key, value in mapping_data.items():
+        result[str(key)] = value
+    return result
 
 
 def load_schema(path: Path) -> Dict[str, Any]:
-    return json.loads(read_file_text(path))
+    return cast(Dict[str, Any], json.loads(read_file_text(path)))
 
 
-def jsonschema_errors(schema: Dict[str, Any], data: Dict[str, Any]) -> Iterable[str]:
-    validator = Draft202012Validator(schema)
+def jsonschema_errors(schema: Mapping[str, Any], data: Mapping[str, Any]) -> Iterable[str]:
+    validator: Any = Draft202012Validator(schema)
     for error in validator.iter_errors(data):
         location = "/".join(str(part) for part in error.path) or "<root>"
         yield f"{location}: {error.message}"
