@@ -78,7 +78,7 @@ KNOWN_TASKS: tuple[AuditTask, ...] = (
         key="llm-usage",
         title="LLM Usage Audit",
         description="(Placeholder) Replace raw provider calls with standard clients.",
-        command=None,
+        command=["python", "scripts/audit_llm_usage.py"],
         path=Path("scripts/audit_llm_usage.py"),
     ),
     AuditTask(
