@@ -91,8 +91,8 @@ KNOWN_TASKS: tuple[AuditTask, ...] = (
     AuditTask(
         key="tooling",
         title="Tooling & CI",
-        description="(Placeholder) Align pre-commit and CI.",
-        command=None,
+        description="Align pre-commit and CI tooling.",
+        command=["python", "scripts/audit_tooling.py"],
         path=Path("scripts/audit_tooling.py"),
     ),
     AuditTask(
