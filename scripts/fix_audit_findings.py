@@ -63,9 +63,9 @@ KNOWN_TASKS: tuple[AuditTask, ...] = (
     AuditTask(
         key="prompt-extract",
         title="Prompt Extraction",
-        description="(Placeholder) Move inline prompts into config/prompts.yaml.",
-        command=None,
-        path=None,
+        description="Extract inline prompts into config/prompts.yaml.",
+        command=["python", "scripts/migrate_prompts_from_code.py", "."],
+        path=Path("scripts/migrate_prompts_from_code.py"),
     ),
     AuditTask(
         key="prompt-merge",
@@ -77,14 +77,14 @@ KNOWN_TASKS: tuple[AuditTask, ...] = (
     AuditTask(
         key="llm-usage",
         title="LLM Usage Audit",
-        description="(Placeholder) Replace raw provider calls with standard clients.",
+        description="Replace raw provider calls with standard clients.",
         command=["python", "scripts/audit_llm_usage.py"],
         path=Path("scripts/audit_llm_usage.py"),
     ),
     AuditTask(
         key="data-layout",
         title="Data Layout & Traceability",
-        description="(Placeholder) Enforce data/ layout and metadata.",
+        description="Enforce data/ layout and metadata.",
         command=["python", "scripts/audit_data_layout.py"],
         path=Path("scripts/audit_data_layout.py"),
     ),
@@ -98,7 +98,7 @@ KNOWN_TASKS: tuple[AuditTask, ...] = (
     AuditTask(
         key="docs",
         title="Docs & Standards",
-        description="(Placeholder) Align README/docs with standards.",
+        description="Align README/docs with standards.",
         command=["python", "scripts/audit_docs.py"],
         path=Path("scripts/audit_docs.py"),
     ),
@@ -123,6 +123,8 @@ Loop: run audit → inspect findings → open files → give Copilot explicit in
    - python ../RZ-AI-Core-Standards/scripts/audit_ai_project.py
    - node ../RZ-AI-Core-Standards/scripts/ajv-validate.mjs
    - (future) audit_data_layout.py, audit_llm_usage.py, audit_tooling.py, audit_docs.py, rz_ai_check.py
+
+    Whenever you create or update an audit script, also update fix_audit_findings.py so its task list and descriptions stay in sync with the runnable scripts.
 
 3) Structure fixes: use Copilot with PROJECT_STRUCTURE.md and templates/data_layout.txt to create missing dirs/files and minimal config/models.yaml and config/prompts.yaml.
 
@@ -225,7 +227,7 @@ def run_sequence(
     return [run_task(task, cwd=target_root, dry_run=dry_run) for task in tasks]
 
 
-def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run or list AI Core Standards audit remediation tasks.")
     parser.add_argument("--list", action="store_true", help="List tasks and exit")
     parser.add_argument("--run", action="store_true", help="Run tasks (default: list only)")
@@ -239,32 +241,38 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
     parser.add_argument("--loop", action="store_true", help="Re-run audits up to max iterations until success")
     parser.add_argument("--max-iterations", type=int, default=3, help="Max iterations when --loop is set (default: 3)")
     parser.add_argument("--skip-plan", action="store_true", help="Do not write remediation plan file")
-    args = parser.parse_args(argv)
+    return parser
 
+
+def _determine_roots(args: argparse.Namespace) -> tuple[Path, Path, Path]:
     repo_root = Path(__file__).resolve().parents[1]
     standards_root = args.standards_root.resolve() if args.standards_root else repo_root
     target_root = args.target_root.resolve() if args.target_root else repo_root
+    return repo_root, standards_root, target_root
 
-    tasks = resolve_tasks(standards_root)
-    only_keys = args.only.split(",") if args.only else None
-    selected = filter_tasks(tasks, only_keys)
 
+def _maybe_list_tasks(selected: list[AuditTask], args: argparse.Namespace) -> int | None:
     if args.guide:
         print(WORKFLOW_GUIDE)
         return 0
-
     if args.list and not args.run:
         for task in selected:
             availability = "missing" if (task.command is None or (task.path and not task.path.exists())) else "available"
             print(f"{task.key:15s} {availability:10s} - {task.title}")
         return 0
-
     if not args.run:
-        parser.print_help()
+        _build_parser().print_help()
         return 0
+    return None
 
-    plan_path = args.plan_path if args.plan_path else (target_root / "fix_audit_plan.md")
 
+def _run_iterations(
+    selected: list[AuditTask],
+    *,
+    target_root: Path,
+    plan_path: Path,
+    args: argparse.Namespace,
+) -> list[TaskResult]:
     def run_once() -> list[TaskResult]:
         return run_sequence(selected, target_root=target_root, dry_run=args.dry_run)
 
@@ -281,15 +289,35 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901
 
         if not failures and (not args.fail_on_missing or not missing):
             break
+    return results
 
+
+def _exit_code(results: list[TaskResult], *, fail_on_missing: bool) -> int:
     failures = [r for r in results if r.is_failure]
     missing = [r for r in results if r.is_missing]
-
     if failures:
         return 1
-    if args.fail_on_missing and missing:
+    if fail_on_missing and missing:
         return 2
     return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    _, standards_root, target_root = _determine_roots(args)
+
+    tasks = resolve_tasks(standards_root)
+    only_keys = args.only.split(",") if args.only else None
+    selected = filter_tasks(tasks, only_keys)
+
+    list_result = _maybe_list_tasks(selected, args)
+    if list_result is not None:
+        return list_result
+
+    plan_path = args.plan_path if args.plan_path else (target_root / "fix_audit_plan.md")
+    results = _run_iterations(selected, target_root=target_root, plan_path=plan_path, args=args)
+    return _exit_code(results, fail_on_missing=args.fail_on_missing)
 
 
 if __name__ == "__main__":
