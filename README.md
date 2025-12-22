@@ -11,7 +11,7 @@ This repository centralizes the conventions, templates, and tooling that govern 
   - `ajv-validate.mjs` for schema checks;
   - `validate_config.py` for Pydantic + JSON Schema validation with `--json` output;
   - `fix_audit_findings.py` to orchestrate audits with cross-repo support;
-  - stubs for prompt extraction/merging, LLM usage, data layout, tooling, docs, and a consolidated check.
+  - additional scripts for prompt extraction/merging, LLM usage, data layout, tooling, docs, and a consolidated check.
 - **LICENSE** – usage terms for the entire standard set.
 
 ## Getting Started

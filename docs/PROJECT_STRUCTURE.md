@@ -8,7 +8,7 @@ project-root/
 │   ├── config/       # runtime settings, env handling, schema definitions
 │   ├── llm/          # LLM clients, prompt runners, wrappers
 │   ├── pipelines/    # high-level workflows using LLMs
-│   └── utils/        # shared helpers (logging, caching, error handling, etc.)
+│   └── tools/        # shared helpers (logging, caching, error handling, etc.)
 │
 ├── config/
 │   ├── prompts.yaml  # prompt definitions by name
