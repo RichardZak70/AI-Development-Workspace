@@ -7,6 +7,9 @@ It exists to prevent the most common failure mode in AI development: unstructure
 
 AI Core Standards defines what “done right” means for prompts, models, data, evaluations, tooling, and documentation—and provides automated audits to enforce it.
 
+This repository is not a project template and should not be copied verbatim into application repos.
+It is intended to be referenced, audited against, or included as a submodule.
+
 ## Why This Exists
 
 Most AI projects fail after the demo.
@@ -194,6 +197,8 @@ This is why the repo scales across:
 
 Read:
 
+- `docs/AI_GOVERNANCE_RULES.md`
+- `docs/STANDARDS_SCOPE.md`
 - `docs/PROJECT_STRUCTURE.md`
 - `docs/AI_PROMPTING_STANDARDS.md`
 - `docs/AI_DOCSTRINGS.md`

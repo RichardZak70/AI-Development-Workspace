@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Iterable
 
 REQUIRED_DOCS: list[str] = [
+    "docs/AI_GOVERNANCE_RULES.md",
+    "docs/STANDARDS_SCOPE.md",
     "docs/PROJECT_STRUCTURE.md",
     "docs/AI_PROMPTING_STANDARDS.md",
     "docs/COPILOT_USAGE.md",
