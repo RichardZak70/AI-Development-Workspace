@@ -19,6 +19,7 @@ All prompts must be:
 
 ```yaml
 summarization:
+  description: Summarize arbitrary text into a fixed number of sentences.
   system: |
     You are a senior technical summarizer. Be concise and accurate.
   user_template: |
@@ -27,6 +28,7 @@ summarization:
     {text}
 
 code_debug:
+  description: Help debug Python errors with minimal, targeted fixes.
   system: |
     You are a senior Python engineer. Fix bugs with minimal changes.
   user_template: |

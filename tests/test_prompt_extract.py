@@ -1,3 +1,5 @@
+"""Tests for prompt extraction utilities."""
+
 import importlib
 import json
 import sys
@@ -22,6 +24,7 @@ def _write(path: Path, text: str) -> None:
 
 
 def test_no_prompts_returns_empty(tmp_path: Path) -> None:
+    """Extraction returns empty result when no prompts exist."""
     _write(tmp_path / "src" / "app.py", "x = 1")
 
     result = extract_prompts(tmp_path, min_length=0)
@@ -31,6 +34,7 @@ def test_no_prompts_returns_empty(tmp_path: Path) -> None:
 
 
 def test_extracts_prompt_variables(tmp_path: Path) -> None:
+    """Extraction finds common prompt variable assignments."""
     code = '''SYSTEM_PROMPT = """You are helpful."""
 USER_PROMPT = "Hello"
 other = "skip"
@@ -49,9 +53,10 @@ other = "skip"
 
 
 def test_min_length_filters_short_prompts(tmp_path: Path) -> None:
-    code = '''SYSTEM_PROMPT = "This is a long enough prompt to be included."
+    """Minimum length filter excludes short prompts."""
+    code = """SYSTEM_PROMPT = "This is a long enough prompt to be included."
 SHORT_PROMPT = "hi"
-'''
+"""
     _write(tmp_path / "p.py", code)
 
     result = extract_prompts(tmp_path, min_length=20)
@@ -62,9 +67,10 @@ SHORT_PROMPT = "hi"
 
 
 def test_extracts_from_fstring_and_concatenation(tmp_path: Path) -> None:
-    code = '''SYSTEM_PROMPT = "You are " + "a helper."
+    """Extraction handles simple concatenation and f-strings."""
+    code = """SYSTEM_PROMPT = "You are " + "a helper."
 USER_PROMPT = f"User says: {{" + "name" + "}}"
-'''
+"""
     _write(tmp_path / "f.py", code)
 
     result = extract_prompts(tmp_path, min_length=0)
@@ -77,6 +83,7 @@ USER_PROMPT = f"User says: {{" + "name" + "}}"
 
 
 def test_ignores_configured_directories(tmp_path: Path) -> None:
+    """Extraction skips directories listed in IGNORE_DIRS."""
     if not IGNORE_DIRS:
         pytest.skip("prompt_extract.IGNORE_DIRS not defined; nothing to test here.")
 
@@ -92,6 +99,7 @@ def test_ignores_configured_directories(tmp_path: Path) -> None:
 
 
 def test_json_round_trip(tmp_path: Path) -> None:
+    """Extraction result round-trips through JSON serialization."""
     _write(tmp_path / "p.py", "PROMPT = 'hi'")
 
     result = extract_prompts(tmp_path, min_length=0)
@@ -111,6 +119,7 @@ def test_json_round_trip(tmp_path: Path) -> None:
 
 
 def test_human_output_mentions_counts(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Human output includes a count of discovered prompts."""
     _write(tmp_path / "p.py", "PROMPT = 'hi'")
 
     result = extract_prompts(tmp_path, min_length=0)
@@ -121,6 +130,7 @@ def test_human_output_mentions_counts(tmp_path: Path, capsys: pytest.CaptureFixt
 
 
 def test_yaml_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """YAML skeleton output includes prompt keys and source metadata."""
     _write(tmp_path / "p.py", "PROMPT = 'hi there'")
 
     # Invoke via function path to produce YAML skeleton

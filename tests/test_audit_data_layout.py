@@ -1,3 +1,5 @@
+"""Tests for the data layout and traceability audit."""
+
 import importlib
 import sys
 from pathlib import Path
@@ -18,6 +20,7 @@ def _make_dirs(base: Path, dirs: list[str]) -> None:
 
 
 def test_pass_when_required_dirs_and_metadata(tmp_path: Path) -> None:
+    """Audit passes when required dirs exist and output metadata is valid."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     out_file = tmp_path / "data" / "outputs" / "result.json"
     out_file.write_text(
@@ -40,6 +43,7 @@ def test_pass_when_required_dirs_and_metadata(tmp_path: Path) -> None:
 
 
 def test_missing_dirs_flags_noncompliance(tmp_path: Path) -> None:
+    """Audit fails when required directories are missing."""
     # Only create data/outputs to avoid having all required dirs
     (tmp_path / "data" / "outputs").mkdir(parents=True, exist_ok=True)
 
@@ -51,6 +55,7 @@ def test_missing_dirs_flags_noncompliance(tmp_path: Path) -> None:
 
 
 def test_missing_metadata_detected(tmp_path: Path) -> None:
+    """Audit fails when output JSON is missing required metadata fields."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     out_file = tmp_path / "data" / "outputs" / "bad.json"
     out_file.write_text("{}", encoding="utf-8")
@@ -63,6 +68,7 @@ def test_missing_metadata_detected(tmp_path: Path) -> None:
 
 
 def test_stray_items_under_data_are_reported(tmp_path: Path) -> None:
+    """Audit reports stray files/directories under data/."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     extra_dir = tmp_path / "data" / "tmp"
     extra_dir.mkdir(parents=True, exist_ok=True)
@@ -78,6 +84,7 @@ def test_stray_items_under_data_are_reported(tmp_path: Path) -> None:
 
 
 def test_allowed_top_level_files_not_flagged(tmp_path: Path) -> None:
+    """Allowed housekeeping files under data/ are not flagged as stray."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     (tmp_path / "data" / ".gitkeep").write_text("", encoding="utf-8")
     (tmp_path / "data" / ".gitignore").write_text("", encoding="utf-8")
@@ -91,6 +98,7 @@ def test_allowed_top_level_files_not_flagged(tmp_path: Path) -> None:
 
 
 def test_malformed_json_output_is_reported(tmp_path: Path) -> None:
+    """Audit reports malformed JSON outputs."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     out_file = tmp_path / "data" / "outputs" / "broken.json"
     out_file.write_text("{not: valid json", encoding="utf-8")
@@ -102,6 +110,7 @@ def test_malformed_json_output_is_reported(tmp_path: Path) -> None:
 
 
 def test_non_object_json_output_is_reported(tmp_path: Path) -> None:
+    """Audit reports outputs whose top-level JSON is not an object."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     out_file = tmp_path / "data" / "outputs" / "array.json"
     out_file.write_text('["a", "b", "c"]', encoding="utf-8")
@@ -113,6 +122,7 @@ def test_non_object_json_output_is_reported(tmp_path: Path) -> None:
 
 
 def test_invalid_timestamp_fails_schema_validation(tmp_path: Path) -> None:
+    """Audit fails schema validation when timestamp format is invalid."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     out_file = tmp_path / "data" / "outputs" / "bad_ts.json"
     out_file.write_text(
@@ -132,6 +142,7 @@ def test_invalid_timestamp_fails_schema_validation(tmp_path: Path) -> None:
 
 
 def test_max_output_files_limits_scan(tmp_path: Path) -> None:
+    """Audit truncates metadata checks when max_output_files is exceeded."""
     _make_dirs(tmp_path, REQUIRED_DIRS)
     outputs_dir = tmp_path / "data" / "outputs"
     for i in range(5):

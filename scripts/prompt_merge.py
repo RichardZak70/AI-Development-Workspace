@@ -11,10 +11,9 @@ import argparse
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any, Dict, Mapping, cast
 
 import yaml
-from typing import cast
 
 
 @dataclass
@@ -27,7 +26,16 @@ class MergeReport:
 
 
 def _load_yaml(path: Path, required: bool = False, label: str | None = None) -> Dict[str, Any]:
-    """Load a YAML mapping with optional requirement enforcement."""
+    """Load a YAML mapping with optional requirement enforcement.
+
+    Args:
+        path: YAML file path.
+        required: If True, raise if the file does not exist.
+        label: Optional label used in error messages.
+
+    Returns:
+        Parsed YAML mapping with keys normalized to strings.
+    """
     label = label or str(path)
 
     if not path.exists():
@@ -53,8 +61,19 @@ def _load_yaml(path: Path, required: bool = False, label: str | None = None) -> 
     return result
 
 
-def merge_prompts(core: Dict[str, Any], template: Dict[str, Any], project: Dict[str, Any]) -> MergeReport:
-    """Merge prompts with precedence project > template > core."""
+def merge_prompts(
+    core: Dict[str, Any], template: Dict[str, Any], project: Dict[str, Any]
+) -> MergeReport:
+    """Merge prompts with precedence project > template > core.
+
+    Args:
+        core: Core prompt mapping.
+        template: Template prompt mapping.
+        project: Project prompt mapping.
+
+    Returns:
+        MergeReport containing merged prompts and provenance.
+    """
     merged: Dict[str, Any] = {}
     source_by_key: Dict[str, str] = {}
     overrides: Dict[str, list[str]] = {}
@@ -73,28 +92,68 @@ def merge_prompts(core: Dict[str, Any], template: Dict[str, Any], project: Dict[
 
 
 def write_yaml(data: Dict[str, Any], path: Path) -> None:
-    """Write YAML to *path*, creating parent directories as needed."""
+    """Write YAML to *path*, creating parent directories as needed.
+
+    Args:
+        data: YAML-serializable mapping to write.
+        path: Destination file path.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=True), encoding="utf-8")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for prompt merging."""
+    """Parse CLI arguments for prompt merging.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Parsed CLI arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="prompt_merge",
         description="Merge prompts with project > template > core precedence.",
     )
-    parser.add_argument("--core", type=Path, default=Path("config/prompts.core.yaml"), help="Path to core prompts.yaml (required)")
-    parser.add_argument("--template", type=Path, default=Path("config/prompts.defaults.yaml"), help="Path to template prompts.defaults.yaml (optional)")
-    parser.add_argument("--project", type=Path, default=Path("config/prompts.custom.yaml"), help="Path to project prompts.custom.yaml (optional)")
-    parser.add_argument("--output", type=Path, default=Path("config/prompts.merged.yaml"), help="Output merged prompts path")
+    parser.add_argument(
+        "--core",
+        type=Path,
+        default=Path("config/prompts.core.yaml"),
+        help="Path to core prompts.yaml (required)",
+    )
+    parser.add_argument(
+        "--template",
+        type=Path,
+        default=Path("config/prompts.defaults.yaml"),
+        help="Path to template prompts.defaults.yaml (optional)",
+    )
+    parser.add_argument(
+        "--project",
+        type=Path,
+        default=Path("config/prompts.custom.yaml"),
+        help="Path to project prompts.custom.yaml (optional)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("config/prompts.merged.yaml"),
+        help="Output merged prompts path",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Do not write output; just report")
-    parser.add_argument("--show-overrides", action="store_true", help="Print which prompt IDs were overridden and source order")
+    parser.add_argument(
+        "--show-overrides",
+        action="store_true",
+        help="Print which prompt IDs were overridden and source order",
+    )
     return parser.parse_args(argv)
 
 
 def _print_overrides(overrides: Dict[str, list[str]]) -> None:
-    """Print overrides to stderr in a human-readable form."""
+    """Print overrides to stderr in a human-readable form.
+
+    Args:
+        overrides: Mapping of prompt id to list of sources encountered.
+    """
     if not overrides:
         return
     print("Overrides detected (later source overrides earlier):", file=sys.stderr)
@@ -105,7 +164,14 @@ def _print_overrides(overrides: Dict[str, list[str]]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
 
     try:

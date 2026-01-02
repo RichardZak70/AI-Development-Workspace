@@ -6,13 +6,12 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict, dataclass
-from pathlib import Path
-from functools import lru_cache
-from typing import Iterable, Mapping, Any, List, cast
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Iterable, List, Mapping, cast
 
 from jsonschema import Draft202012Validator, FormatChecker
-
 
 REQUIRED_DIRS: list[str] = [
     "data",
@@ -25,15 +24,15 @@ REQUIRED_DIRS: list[str] = [
 ]
 
 # Derive allowed top-level subdirs in data/ from REQUIRED_DIRS to avoid duplication.
-ALLOWED_TOP_LEVEL_IN_DATA: set[str] = {
-    Path(p).name for p in REQUIRED_DIRS if p != "data"
-}
+ALLOWED_TOP_LEVEL_IN_DATA: set[str] = {Path(p).name for p in REQUIRED_DIRS if p != "data"}
 
 # Files that are allowed directly under data/ (common housekeeping)
 ALLOWED_TOP_LEVEL_FILES_IN_DATA: set[str] = {".gitkeep", ".gitignore", "README.md"}
 
 OUTPUT_METADATA_KEYS: list[str] = ["run_id", "model", "prompt_id", "timestamp"]
-OUTPUT_SCHEMA_PATH: Path = Path(__file__).resolve().parent.parent / "schemas" / "outputs_metadata.schema.json"
+OUTPUT_SCHEMA_PATH: Path = (
+    Path(__file__).resolve().parent.parent / "schemas" / "outputs_metadata.schema.json"
+)
 
 
 @dataclass
@@ -51,7 +50,11 @@ class DataAuditResult:
         return not self.missing_dirs and not self.stray_items and not self.metadata_issues
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this result."""
+        """Return a JSON-serializable representation of this result.
+
+        Returns:
+            A JSON-serializable dictionary representing this audit result.
+        """
         payload = asdict(self)
         payload["is_compliant"] = self.is_compliant
         return payload
@@ -66,7 +69,14 @@ def _find_missing(root: Path, expected: Iterable[str]) -> list[str]:
 
 
 def _find_stray_items(data_root: Path) -> list[str]:
-    """Find unexpected files/dirs directly under data/."""
+    """Find unexpected files/dirs directly under data/.
+
+    Args:
+        data_root: Path to the data/ directory to inspect.
+
+    Returns:
+        Relative paths of unexpected files/directories directly under data/.
+    """
     stray: list[str] = []
     if not data_root.exists():
         return stray
@@ -108,7 +118,16 @@ def _check_output_metadata(
     max_files: int | None = None,
     schema_path: Path | None = None,
 ) -> List[str]:
-    """Check JSON files under data/outputs for required metadata keys and schema compliance."""
+    """Check JSON files under data/outputs for required metadata keys and schema compliance.
+
+    Args:
+        outputs_root: Root directory to scan for JSON outputs.
+        max_files: Optional maximum number of JSON files to validate.
+        schema_path: Optional path to a JSON Schema used for validation.
+
+    Returns:
+        A list of human-readable issues found during metadata validation.
+    """
     if not outputs_root.exists():
         return []
 
@@ -155,7 +174,9 @@ def _validate_output_file(path: Path, schema: Mapping[str, Any] | None) -> List[
         ts_value = data_map["timestamp"]
         try:
             # Accept trailing Z by normalizing to +00:00 for fromisoformat
-            ts_normalized = ts_value.replace("Z", "+00:00") if isinstance(ts_value, str) else str(ts_value)
+            ts_normalized = (
+                ts_value.replace("Z", "+00:00") if isinstance(ts_value, str) else str(ts_value)
+            )
             datetime.fromisoformat(ts_normalized)
         except Exception as exc:  # noqa: BLE001
             file_issues.append(f"{path}: invalid timestamp format: {exc}")
@@ -186,7 +207,16 @@ def audit(
     max_output_files: int | None = None,
     metadata_schema: Path | None = None,
 ) -> DataAuditResult:
-    """Audit *target_root* for expected data folders and output metadata."""
+    """Audit *target_root* for expected data folders and output metadata.
+
+    Args:
+        target_root: Target repository root.
+        max_output_files: Optional maximum number of output JSON files to validate.
+        metadata_schema: Optional path to an outputs metadata JSON schema.
+
+    Returns:
+        DataAuditResult describing missing folders and metadata issues.
+    """
     missing_dirs = _find_missing(target_root, REQUIRED_DIRS)
     stray_items = _find_stray_items(target_root / "data")
     schema_path = metadata_schema or OUTPUT_SCHEMA_PATH
@@ -204,7 +234,11 @@ def audit(
 
 
 def print_human(result: DataAuditResult) -> None:
-    """Print a human-readable data layout audit report."""
+    """Print a human-readable data layout audit report.
+
+    Args:
+        result: The audit result to render.
+    """
     print(f"Auditing data layout in: {result.target}\n")
 
     if result.missing_dirs:
@@ -232,8 +266,17 @@ def print_human(result: DataAuditResult) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for the data layout audit."""
-    parser = argparse.ArgumentParser(prog="audit_data_layout", description="Audit data layout and traceability.")
+    """Parse CLI arguments for the data layout audit.
+
+    Args:
+        argv: Optional argv list (excluding program name is acceptable).
+
+    Returns:
+        Parsed CLI arguments.
+    """
+    parser = argparse.ArgumentParser(
+        prog="audit_data_layout", description="Audit data layout and traceability."
+    )
     parser.add_argument(
         "--target-root",
         type=Path,
@@ -266,7 +309,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
     target_root = args.target_root.resolve()
 

@@ -6,45 +6,69 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: check-merge-conflict
+      - id: check-json
+        exclude: '^\.vscode/settings\.json$'
       - id: check-yaml
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.3.2
+    rev: v3.1.0
     hooks:
       - id: prettier
-        args: ["--write", "."]
+        args: ["--check", "."]
         files: '\\.(json|jsonc|ya?ml|md)$'
-  - repo: https://github.com/sirosen/check-json
-    rev: v2.0.2
-    hooks:
-      - id: check-json
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
       - id: ruff
-        args: ["--fix"]
-      - id: ruff-format
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.12.0
+        name: ruff (lint, includes docstrings)
+        pass_filenames: false
+        args: ["--output-format=full", "."]
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies: []
-        args:
-          - --config-file=mypy.ini
-          - scripts
+        name: mypy (scripts)
+        entry: python -m mypy --config-file=mypy.ini scripts
+        language: system
+        pass_filenames: false
+        types: [python]
+
+  # Config YAML validation (schemas + required description fields).
+  - repo: local
+    hooks:
+      - id: validate-config
+        name: validate-config (config/*.yaml)
+        entry: python scripts/validate_config.py
+        language: system
+        pass_filenames: false
+        files: '^(templates/config|config)/.*\.ya?ml$'
 
   # Docstring structure + signature alignment (Google style).
-  - repo: https://github.com/terrencepreilly/darglint
-    rev: v1.8.1
+  # Note: Ruff enforces docstring *convention* (pydocstyle/google). pydoclint
+  # enforces that Args/Returns/Yields sections match the function signature.
+  - repo: local
     hooks:
-      - id: darglint
+      - id: pydoclint
+        name: pydoclint (docstring structure)
+        entry: pydoclint
+        language: python
+        additional_dependencies:
+          - pydoclint==0.8.3
+        pass_filenames: false
         args:
-          - -s
+          - --style
           - google
-          - -z
-          - short
-          - --ignore-regex
-          - '^_'
-        files: '^scripts/.*\\.py$'
+          - --skip-checking-short-docstrings
+          - "False"
+          - --arg-type-hints-in-docstring
+          - "False"
+          - --check-class-attributes
+          - "False"
+          - --skip-checking-raises
+          - "True"
+          - --check-return-types
+          - "False"
+          - --check-yield-types
+          - "False"
+          - scripts
 
   # Doc coverage for public, non-obvious entry points.
   - repo: https://github.com/econchick/interrogate
@@ -68,11 +92,11 @@ repos:
     hooks:
       - id: vale
         name: vale
-        entry: .venv/Scripts/python scripts/run_vale.py
+        entry: python scripts/run_vale.py
         language: system
         pass_filenames: false
         files: '^(README\\.md|docs/.*\\.md)$'
-        stages: [commit]
+        stages: [pre-commit]
 
   # Enforce high-quality JSDoc blocks for our JS scripts.
   - repo: local
@@ -87,8 +111,8 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: .venv/Scripts/python -m pytest
+        entry: python -m pytest
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
         types: [python]

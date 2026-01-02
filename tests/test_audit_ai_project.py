@@ -1,3 +1,5 @@
+"""Tests for the AI project structure audit."""
+
 import importlib
 import sys
 from pathlib import Path
@@ -31,7 +33,9 @@ def _create_files(base: Path, files: list[str]) -> None:
         path.touch()
 
 
-def test_audit_passes_when_all_required_items_exist(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_audit_passes_when_all_required_items_exist(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Project passes when required dirs/files exist; recommended may be missing."""
     _create_dirs(tmp_path, REQUIRED_DIRS)
     _create_files(tmp_path, REQUIRED_FILES)
@@ -49,7 +53,10 @@ def test_audit_passes_when_all_required_items_exist(tmp_path: Path, capsys: pyte
     assert "Project matches core AI structure." in captured
 
 
-def test_audit_reports_missing_dirs_and_files(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_audit_reports_missing_dirs_and_files(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Audit reports missing required directories and files."""
     # Create only a subset so we trigger missing directories and files
     _create_dirs(tmp_path, ["config", "docs"])
     _create_files(tmp_path, [])
@@ -73,7 +80,10 @@ def test_audit_reports_missing_dirs_and_files(tmp_path: Path, capsys: pytest.Cap
     assert "Project does NOT match core AI structure." in captured
 
 
-def test_audit_reports_missing_files_only(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_audit_reports_missing_files_only(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Audit reports missing files when directories exist."""
     # All directories exist, but files are absent
     _create_dirs(tmp_path, REQUIRED_DIRS)
 
@@ -90,7 +100,9 @@ def test_audit_reports_missing_files_only(tmp_path: Path, capsys: pytest.Capture
     assert "Project does NOT match core AI structure." in captured
 
 
-def test_missing_recommended_only_does_not_break_compliance(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_missing_recommended_only_does_not_break_compliance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Recommended-only gaps should still be compliant but warn."""
     _create_dirs(tmp_path, REQUIRED_DIRS)
     _create_files(tmp_path, REQUIRED_FILES)

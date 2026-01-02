@@ -1,3 +1,5 @@
+"""Tests for tooling and CI audit."""
+
 import importlib
 import json
 import sys

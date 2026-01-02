@@ -17,9 +17,11 @@ from pydantic import (
     Field,
     PositiveInt,
     RootModel,
-    ValidationError as PydanticValidationError,
     field_validator,
     model_validator,
+)
+from pydantic import (
+    ValidationError as PydanticValidationError,
 )
 
 ModelType = Type[BaseModel]
@@ -65,7 +67,7 @@ class PromptTemplate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    description: str | None = None
+    description: str = Field(min_length=1)
     system: str = Field(min_length=1)
     user_template: str = Field(min_length=1)
     output_format: str | None = None
@@ -82,7 +84,9 @@ class DataPolicy(BaseModel):
 
     pii: bool | None = None
     prod_data: bool | None = None
-    data_classification: str | None = Field(None, pattern="^(public|internal|confidential|restricted)$")
+    data_classification: str | None = Field(
+        None, pattern="^(public|internal|confidential|restricted)$"
+    )
     retention_days: int | None = Field(None, ge=0)
 
 
@@ -148,7 +152,14 @@ class Evaluation(BaseModel):
     @field_validator("models", "metrics")
     @classmethod
     def ensure_non_empty_list(cls, value: list[str]) -> list[str]:
-        """Validate that list fields are non-empty."""
+        """Validate that list fields are non-empty.
+
+        Args:
+            value: List value to validate.
+
+        Returns:
+            The validated list.
+        """
         if not value:
             raise ValueError("must contain at least one item")
         return value
@@ -156,7 +167,14 @@ class Evaluation(BaseModel):
     @field_validator("prompt_id")
     @classmethod
     def ensure_prompt_id(cls, value: str | list[str]) -> str | list[str]:
-        """Validate that prompt_id is a non-empty string or list of strings."""
+        """Validate that prompt_id is a non-empty string or list of strings.
+
+        Args:
+            value: Prompt id value to validate.
+
+        Returns:
+            The validated prompt id value.
+        """
         if isinstance(value, str):
             if not value:
                 raise ValueError("prompt_id cannot be empty")
@@ -169,7 +187,11 @@ class Evaluation(BaseModel):
 
     @model_validator(mode="after")
     def ensure_dataset_source(self) -> "Evaluation":
-        """Validate that the dataset includes dataset_id or data_path."""
+        """Validate that the dataset includes dataset_id or data_path.
+
+        Returns:
+            The validated Evaluation instance.
+        """
         if not self.dataset.has_source:
             raise ValueError("dataset must include dataset_id or data_path")
         return self
@@ -190,12 +212,26 @@ class EvalsConfig(BaseModel):
 
 
 def read_file_text(path: Path) -> str:
-    """Read text from *path* with helpful error messages."""
+    """Read text from *path* with helpful error messages.
+
+    Args:
+        path: File path to read.
+
+    Returns:
+        File contents as text.
+    """
     return path.read_text(encoding="utf-8")
 
 
 def load_yaml(path: Path) -> Dict[str, Any]:
-    """Load YAML from *path* and normalize keys to strings."""
+    """Load YAML from *path* and normalize keys to strings.
+
+    Args:
+        path: YAML file path.
+
+    Returns:
+        Parsed YAML mapping with keys normalized to strings.
+    """
     data = yaml.safe_load(read_file_text(path))
     if data is None:
         return {}
@@ -209,12 +245,27 @@ def load_yaml(path: Path) -> Dict[str, Any]:
 
 
 def load_schema(path: Path) -> Dict[str, Any]:
-    """Load a JSON schema from *path*."""
+    """Load a JSON schema from *path*.
+
+    Args:
+        path: JSON schema file path.
+
+    Returns:
+        Parsed JSON schema mapping.
+    """
     return cast(Dict[str, Any], json.loads(read_file_text(path)))
 
 
 def jsonschema_errors(schema: Mapping[str, Any], data: Mapping[str, Any]) -> Iterable[str]:
-    """Yield human-readable JSON Schema validation errors."""
+    """Yield human-readable JSON Schema validation errors.
+
+    Args:
+        schema: JSON schema mapping.
+        data: Data mapping to validate.
+
+    Yields:
+        Human-readable validation error strings.
+    """
     validator: Any = Draft202012Validator(schema)
     for error in validator.iter_errors(data):
         location = "/".join(str(part) for part in error.path) or "<root>"
@@ -238,7 +289,17 @@ def validate_document(
     schema_path: Path,
     model_class: ModelType,
 ) -> ValidationResult:
-    """Validate one YAML config against both JSON Schema and a Pydantic model."""
+    """Validate one YAML config against both JSON Schema and a Pydantic model.
+
+    Args:
+        label: Document label used in output.
+        data_path: YAML config file path.
+        schema_path: JSON schema file path.
+        model_class: Pydantic model class used for validation.
+
+    Returns:
+        ValidationResult describing success/failure and errors.
+    """
     errors: list[str] = []
     try:
         data = load_yaml(data_path)
@@ -267,16 +328,27 @@ def validate_document(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse CLI arguments for validating template configs."""
+    """Parse CLI arguments for validating config YAML files.
+
+    Returns:
+        Parsed CLI arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="validate_config",
-        description="Validate template configs against JSON Schema and Pydantic models",
+        description=(
+            "Validate config YAML files against JSON Schema and Pydantic models. "
+            "Defaults to repo_root/config/*.yaml if present, otherwise "
+            "repo_root/templates/config/*.yaml."
+        ),
     )
     parser.add_argument(
         "--models",
         type=Path,
         default=None,
-        help="Path to models.yaml (default: repo_root/templates/config/models.yaml)",
+        help=(
+            "Path to models.yaml (default: repo_root/config/models.yaml if present; "
+            "otherwise repo_root/templates/config/models.yaml)"
+        ),
     )
     parser.add_argument(
         "--models-schema",
@@ -288,7 +360,10 @@ def parse_args() -> argparse.Namespace:
         "--prompts",
         type=Path,
         default=None,
-        help="Path to prompts.yaml (default: repo_root/templates/config/prompts.yaml)",
+        help=(
+            "Path to prompts.yaml (default: repo_root/config/prompts.yaml if present; "
+            "otherwise repo_root/templates/config/prompts.yaml)"
+        ),
     )
     parser.add_argument(
         "--prompts-schema",
@@ -300,7 +375,10 @@ def parse_args() -> argparse.Namespace:
         "--project",
         type=Path,
         default=None,
-        help="Path to project.yaml (default: repo_root/templates/config/project.yaml)",
+        help=(
+            "Path to project.yaml (default: repo_root/config/project.yaml if present; "
+            "otherwise repo_root/templates/config/project.yaml)"
+        ),
     )
     parser.add_argument(
         "--project-schema",
@@ -312,7 +390,10 @@ def parse_args() -> argparse.Namespace:
         "--evals",
         type=Path,
         default=None,
-        help="Path to evals.yaml (default: repo_root/templates/config/evals.yaml)",
+        help=(
+            "Path to evals.yaml (default: repo_root/config/evals.yaml if present; "
+            "otherwise repo_root/templates/config/evals.yaml)"
+        ),
     )
     parser.add_argument(
         "--evals-schema",
@@ -328,16 +409,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _resolve_paths(args: argparse.Namespace) -> Tuple[Path, Path, Path, Path, Path, Path, Path, Path]:
-    models_path = (args.models or (REPO_ROOT / "templates/config/models.yaml")).resolve()
+def _resolve_paths(
+    args: argparse.Namespace,
+) -> Tuple[Path, Path, Path, Path, Path, Path, Path, Path]:
+    config_dir = REPO_ROOT / "config"
+    config_root = config_dir if config_dir.exists() else (REPO_ROOT / "templates/config")
+
+    models_path = (args.models or (config_root / "models.yaml")).resolve()
     models_schema = (args.models_schema or (REPO_ROOT / "schemas/models.schema.json")).resolve()
-    prompts_path = (args.prompts or (REPO_ROOT / "templates/config/prompts.yaml")).resolve()
+    prompts_path = (args.prompts or (config_root / "prompts.yaml")).resolve()
     prompts_schema = (args.prompts_schema or (REPO_ROOT / "schemas/prompts.schema.json")).resolve()
-    project_path = (args.project or (REPO_ROOT / "templates/config/project.yaml")).resolve()
-    project_schema = (args.project_schema or (REPO_ROOT / "schemas/project_config.schema.json")).resolve()
-    evals_path = (args.evals or (REPO_ROOT / "templates/config/evals.yaml")).resolve()
+    project_path = (args.project or (config_root / "project.yaml")).resolve()
+    project_schema = (
+        args.project_schema or (REPO_ROOT / "schemas/project_config.schema.json")
+    ).resolve()
+    evals_path = (args.evals or (config_root / "evals.yaml")).resolve()
     evals_schema = (args.evals_schema or (REPO_ROOT / "schemas/eval_config.schema.json")).resolve()
-    return models_path, models_schema, prompts_path, prompts_schema, project_path, project_schema, evals_path, evals_schema
+    return (
+        models_path,
+        models_schema,
+        prompts_path,
+        prompts_schema,
+        project_path,
+        project_schema,
+        evals_path,
+        evals_schema,
+    )
 
 
 def _render_json(results: list[ValidationResult]) -> None:
@@ -360,17 +457,26 @@ def _render_json(results: list[ValidationResult]) -> None:
 def _render_human(results: list[ValidationResult]) -> None:
     for res in results:
         if res.ok:
-            print(f"✅ {res.label} config valid: {res.data_path}")
+            print(f"OK {res.label} config valid: {res.data_path}")
         else:
-            print(f"❌ {res.label} invalid: {res.data_path}")
+            print(f"ERROR {res.label} invalid: {res.data_path}")
             for issue in res.errors:
                 print(f"  - {issue}")
 
 
 def main() -> None:
-    """Validate all template configs and exit non-zero if any fail."""
+    """Validate config YAML files and exit non-zero if any fail."""
     args = parse_args()
-    models_path, models_schema, prompts_path, prompts_schema, project_path, project_schema, evals_path, evals_schema = _resolve_paths(args)
+    (
+        models_path,
+        models_schema,
+        prompts_path,
+        prompts_schema,
+        project_path,
+        project_schema,
+        evals_path,
+        evals_schema,
+    ) = _resolve_paths(args)
 
     validations: Tuple[Tuple[str, Path, Path, ModelType], ...] = (
         ("models", models_path, models_schema, ModelsConfig),

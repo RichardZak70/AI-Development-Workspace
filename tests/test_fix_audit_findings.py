@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Any, cast
 
-
 # Ensure scripts/ is importable
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = ROOT / "scripts"
@@ -21,6 +20,7 @@ summarize = cast(Any, summarize)
 
 
 def test_run_task_marks_missing_when_command_absent() -> None:
+    """run_task returns 'missing' when a task has no runnable command."""
     task: Any = AuditTask(
         key="missing",
         title="Missing Task",
@@ -36,6 +36,7 @@ def test_run_task_marks_missing_when_command_absent() -> None:
 
 
 def test_run_task_executes_available(tmp_path: Path) -> None:
+    """run_task executes a task command and captures output."""
     script = tmp_path / "dummy.py"
     script.write_text("print('hello')", encoding="utf-8")
 
@@ -55,6 +56,7 @@ def test_run_task_executes_available(tmp_path: Path) -> None:
 
 
 def test_summarize_formats_output() -> None:
+    """Summarize renders a compact markdown table."""
     missing: Any = run_task(
         AuditTask(
             key="missing",
@@ -73,6 +75,7 @@ def test_summarize_formats_output() -> None:
 
 
 def test_guide_flag_prints_workflow(capsys: Any) -> None:
+    """--guide prints the remediation workflow and exits cleanly."""
     # Invoke main in-process to ensure the guide renders without error.
     from fix_audit_findings import main
 

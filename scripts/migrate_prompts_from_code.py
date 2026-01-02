@@ -19,18 +19,22 @@ from typing import Any, Dict, List, Tuple
 
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Detection heuristics
 # ---------------------------------------------------------------------------
 
-PROMPT_VAR_PATTERN = re.compile(
-    r"(?i)(prompt|template|system_msg|user_msg|instruction)$"
-)
+PROMPT_VAR_PATTERN = re.compile(r"(?i)(prompt|template|system_msg|user_msg|instruction)$")
 
 
 def looks_like_prompt_var(name: str) -> bool:
-    """Return True if variable name suggests it holds a prompt."""
+    """Return True if variable name suggests it holds a prompt.
+
+    Args:
+        name: Variable name to evaluate.
+
+    Returns:
+        True if the name likely indicates the variable holds a prompt.
+    """
     return bool(PROMPT_VAR_PATTERN.search(name))
 
 
@@ -54,7 +58,14 @@ def _prompts_from_annassign(node: ast.AnnAssign) -> list[Tuple[str, str]]:
 
 
 def extract_prompts_from_source(source: str) -> List[Tuple[str, str]]:
-    """Parse *source* and return list of (variable_name, string_value) tuples."""
+    """Parse *source* and return list of (variable_name, string_value) tuples.
+
+    Args:
+        source: Python source code to parse.
+
+    Returns:
+        List of (variable_name, string_value) tuples extracted from assignments.
+    """
     prompts: List[Tuple[str, str]] = []
     try:
         tree = ast.parse(source)
@@ -70,7 +81,14 @@ def extract_prompts_from_source(source: str) -> List[Tuple[str, str]]:
 
 
 def _extract_string(node: ast.expr) -> str | None:
-    """Return string content if *node* is a string constant, else None."""
+    """Return string content if *node* is a string constant, else None.
+
+    Args:
+        node: AST expression to inspect.
+
+    Returns:
+        String content if node is a string constant; otherwise None.
+    """
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
     return None
@@ -82,7 +100,14 @@ def _extract_string(node: ast.expr) -> str | None:
 
 
 def scan_directory(root: Path) -> Dict[str, Dict[str, str]]:
-    """Walk *root* for .py files and collect prompts keyed by relative path."""
+    """Walk *root* for .py files and collect prompts keyed by relative path.
+
+    Args:
+        root: Directory root to scan.
+
+    Returns:
+        Mapping of relative file path to extracted prompt variable mappings.
+    """
     results: Dict[str, Dict[str, str]] = {}
     for py_file in root.rglob("*.py"):
         try:
@@ -97,7 +122,14 @@ def scan_directory(root: Path) -> Dict[str, Dict[str, str]]:
 
 
 def build_yaml_structure(raw: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
-    """Transform raw scan results into the RZ prompts.yaml structure."""
+    """Transform raw scan results into the RZ prompts.yaml structure.
+
+    Args:
+        raw: Raw scan output keyed by file with prompt variable name/value pairs.
+
+    Returns:
+        Dictionary representing a prompts YAML mapping.
+    """
     output: Dict[str, Any] = {}
     for file_key, prompts in raw.items():
         for var_name, content in prompts.items():
@@ -109,6 +141,7 @@ def build_yaml_structure(raw: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
                 key = f"{base_key}_{counter}"
                 counter += 1
             output[key] = {
+                "description": "TODO: describe what this prompt is for",
                 "system": content,
                 "user_template": "# TODO: define user template",
                 "_source_file": file_key,
@@ -118,7 +151,12 @@ def build_yaml_structure(raw: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
 
 
 def write_yaml(data: Dict[str, Any], dest: Path) -> None:
-    """Write *data* to *dest* as YAML."""
+    """Write *data* to *dest* as YAML.
+
+    Args:
+        data: YAML-serializable mapping to write.
+        dest: Destination file path.
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
     with dest.open("w", encoding="utf-8", newline="\n") as f:
         yaml.safe_dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
@@ -130,10 +168,14 @@ def write_yaml(data: Dict[str, Any], dest: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse CLI arguments for prompt migration."""
+    """Parse CLI arguments for prompt migration.
+
+    Returns:
+        Parsed CLI arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="migrate_prompts_from_code",
-        description="Extract inline prompts from Python code into a YAML config."
+        description="Extract inline prompts from Python code into a YAML config.",
     )
     parser.add_argument(
         "project",

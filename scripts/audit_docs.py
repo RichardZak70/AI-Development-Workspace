@@ -9,7 +9,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
-
 REQUIRED_DOCS: list[str] = [
     "docs/PROJECT_STRUCTURE.md",
     "docs/AI_PROMPTING_STANDARDS.md",
@@ -38,14 +37,14 @@ class DocsAuditResult:
     @property
     def is_compliant(self) -> bool:
         """Return True if required docs exist and are linked from README.md."""
-        return (
-            not self.missing_required
-            and not self.readme_missing
-            and not self.unlinked_required
-        )
+        return not self.missing_required and not self.readme_missing and not self.unlinked_required
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this result."""
+        """Return a JSON-serializable representation of this result.
+
+        Returns:
+            A JSON-serializable dictionary representing this audit result.
+        """
         payload = asdict(self)
         payload["is_compliant"] = self.is_compliant
         return payload
@@ -71,7 +70,15 @@ def _load_readme(root: Path) -> str | None:
 
 
 def _find_unlinked(existing_required: Iterable[str], readme_text: str | None) -> list[str]:
-    """Return required docs that exist but are not referenced in README."""
+    """Return required docs that exist but are not referenced in README.
+
+    Args:
+        existing_required: Iterable of required doc paths that exist on disk.
+        readme_text: README contents, or None if README is missing/unreadable.
+
+    Returns:
+        Required doc paths that are not referenced in README.
+    """
     if readme_text is None:
         # README missing is already signaled; avoid redundant noise
         return []
@@ -86,7 +93,14 @@ def _find_unlinked(existing_required: Iterable[str], readme_text: str | None) ->
 
 
 def audit(target_root: Path) -> DocsAuditResult:
-    """Audit *target_root* for required docs and README linkage."""
+    """Audit *target_root* for required docs and README linkage.
+
+    Args:
+        target_root: Target repository root.
+
+    Returns:
+        DocsAuditResult describing missing docs and README linkage issues.
+    """
     missing_required = _find_missing(target_root, REQUIRED_DOCS)
     missing_recommended = _find_missing(target_root, RECOMMENDED_DOCS)
     readme_text = _load_readme(target_root)
@@ -104,7 +118,11 @@ def audit(target_root: Path) -> DocsAuditResult:
 
 
 def print_human(result: DocsAuditResult) -> None:
-    """Print a human-readable documentation audit report."""
+    """Print a human-readable documentation audit report.
+
+    Args:
+        result: The audit result to render.
+    """
     print(f"Auditing docs in: {result.target}\n")
 
     if result.readme_missing:
@@ -135,16 +153,36 @@ def print_human(result: DocsAuditResult) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for the docs audit."""
-    parser = argparse.ArgumentParser(prog="audit_docs", description="Audit documentation against standards.")
-    parser.add_argument("--target-root", type=Path, default=Path("."), help="Path to target repo root")
-    parser.add_argument("--json", action="store_true", help="Emit JSON instead of human-readable output")
+    """Parse CLI arguments for the docs audit.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Parsed CLI arguments.
+    """
+    parser = argparse.ArgumentParser(
+        prog="audit_docs", description="Audit documentation against standards."
+    )
+    parser.add_argument(
+        "--target-root", type=Path, default=Path("."), help="Path to target repo root"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit JSON instead of human-readable output"
+    )
     parser.add_argument("--report", type=Path, help="Where to write the audit report (JSON)")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
     target_root = args.target_root.resolve()
 

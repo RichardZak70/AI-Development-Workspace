@@ -1,3 +1,5 @@
+"""Tests for documentation presence/linkage audit."""
+
 import importlib
 import json
 import sys

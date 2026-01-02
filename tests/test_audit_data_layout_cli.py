@@ -1,3 +1,5 @@
+"""CLI-related tests for the data layout audit."""
+
 import importlib
 import json
 import sys
@@ -18,6 +20,7 @@ def _make_dirs(base: Path, dirs: list[str]) -> None:
 
 
 def test_custom_metadata_schema_is_used(tmp_path: Path) -> None:
+    """Custom metadata schema is used when provided to the audit."""
     # create required dirs
     required_dirs = getattr(mod, "REQUIRED_DIRS")
     _make_dirs(tmp_path, required_dirs)

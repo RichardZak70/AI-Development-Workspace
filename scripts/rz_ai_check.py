@@ -23,7 +23,11 @@ class CheckResult:
     details: dict[str, Any]
 
     def to_json(self) -> dict[str, Any]:
-        """Return a JSON-serializable representation of this check."""
+        """Return a JSON-serializable representation of this check.
+
+        Returns:
+            A JSON-serializable dictionary representing this check.
+        """
         return asdict(self)
 
 
@@ -40,7 +44,11 @@ class ConsolidatedReport:
         return all(check.status == "pass" for check in self.checks)
 
     def to_json(self) -> dict[str, Any]:
-        """Return a JSON-serializable representation of this report."""
+        """Return a JSON-serializable representation of this report.
+
+        Returns:
+            A JSON-serializable dictionary representing this report.
+        """
         return {
             "target": self.target,
             "passed": self.passed,
@@ -49,7 +57,14 @@ class ConsolidatedReport:
 
 
 def run_checks(target_root: Path) -> ConsolidatedReport:
-    """Run the consolidated checks against *target_root*."""
+    """Run the consolidated checks against *target_root*.
+
+    Args:
+        target_root: Target repository root.
+
+    Returns:
+        ConsolidatedReport containing check results.
+    """
     checks: list[CheckResult] = []
 
     tooling_result = audit_tooling(target_root)
@@ -86,7 +101,11 @@ def run_checks(target_root: Path) -> ConsolidatedReport:
 
 
 def print_human(report: ConsolidatedReport) -> None:
-    """Print a human-readable consolidated report."""
+    """Print a human-readable consolidated report.
+
+    Args:
+        report: Consolidated report to render.
+    """
     print(f"Running AI-Core consolidated checks for: {report.target}\n")
     for check in report.checks:
         mark = "✅" if check.status == "pass" else "❌"
@@ -96,19 +115,37 @@ def print_human(report: ConsolidatedReport) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for the consolidated check runner."""
+    """Parse CLI arguments for the consolidated check runner.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Parsed CLI arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="rz_ai_check",
         description="Run consolidated AI-Core-Standards health check.",
     )
-    parser.add_argument("--target-root", type=Path, default=Path("."), help="Path to target repo root")
-    parser.add_argument("--json", action="store_true", help="Emit JSON instead of human-readable output")
+    parser.add_argument(
+        "--target-root", type=Path, default=Path("."), help="Path to target repo root"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit JSON instead of human-readable output"
+    )
     parser.add_argument("--report", type=Path, help="Where to write the consolidated report (JSON)")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
     target_root = args.target_root.resolve()
 

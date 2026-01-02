@@ -196,6 +196,7 @@ Read:
 
 - `docs/PROJECT_STRUCTURE.md`
 - `docs/AI_PROMPTING_STANDARDS.md`
+- `docs/AI_DOCSTRINGS.md`
 
 Choose an appropriate project template / archetype (CLI, service, library, RAG app, hardware-facing app).
 

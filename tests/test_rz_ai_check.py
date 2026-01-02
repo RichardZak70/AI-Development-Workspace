@@ -1,3 +1,5 @@
+"""Tests for the consolidated AI standards check runner."""
+
 import importlib
 import json
 import sys
@@ -41,10 +43,13 @@ def _setup_compliant_repo(root: Path) -> None:
     # Prompt example
     (root / "service").mkdir(parents=True, exist_ok=True)
     long_prompt = "You are a helpful assistant who answers succinctly."  # > min_length default
-    (root / "service" / "prompts.py").write_text(f"SYSTEM_PROMPT = '{long_prompt}'", encoding="utf-8")
+    (root / "service" / "prompts.py").write_text(
+        f"SYSTEM_PROMPT = '{long_prompt}'", encoding="utf-8"
+    )
 
 
 def test_run_checks_passes_when_all_compliant(tmp_path: Path) -> None:
+    """run_checks passes when the target repo meets all requirements."""
     _setup_compliant_repo(tmp_path)
 
     report = run_checks(tmp_path)
@@ -58,6 +63,7 @@ def test_run_checks_passes_when_all_compliant(tmp_path: Path) -> None:
 
 
 def test_main_json_output_and_exit_code(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Main emits JSON and returns 0 on success."""
     _setup_compliant_repo(tmp_path)
 
     exit_code = main(["--target-root", str(tmp_path), "--json"])
@@ -68,7 +74,10 @@ def test_main_json_output_and_exit_code(tmp_path: Path, capsys: pytest.CaptureFi
     assert len(payload["checks"]) == 3
 
 
-def test_main_fails_when_data_layout_missing(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_fails_when_data_layout_missing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Main returns non-zero when a required check fails."""
     # Only create tooling compliance; skip data dirs
     _touch(tmp_path / ".pre-commit-config.yaml")
     _touch(tmp_path / "pyproject.toml")

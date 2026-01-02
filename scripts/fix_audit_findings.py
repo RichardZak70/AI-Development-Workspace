@@ -124,32 +124,52 @@ Use the audits to see gaps, then fix with Copilot, then re-run audits.
 
 Loop: run audit → inspect findings → open files → give Copilot explicit instructions → re-run audit.
 
-1) Workspace: open both the standards repo and the target repo in a VS Code multi-root workspace so Copilot can reference standards.
+1) Workspace: open both the standards repo and the target repo in a VS Code
+    multi-root workspace so Copilot can reference standards.
 
 2) Run audits from the target repo root (adjust paths to your standards repo):
    - python ../RZ-AI-Core-Standards/scripts/audit_ai_project.py
    - node ../RZ-AI-Core-Standards/scripts/ajv-validate.mjs
-   - (future) audit_data_layout.py, audit_llm_usage.py, audit_tooling.py, audit_docs.py, rz_ai_check.py
+     - (future) audit_data_layout.py, audit_llm_usage.py, audit_tooling.py,
+         audit_docs.py, rz_ai_check.py
 
-    Whenever you create or update an audit script, also update fix_audit_findings.py so its task list and descriptions stay in sync with the runnable scripts.
+    Whenever you create or update an audit script, also update
+    fix_audit_findings.py so its task list and descriptions stay in sync with
+    the runnable scripts.
 
-3) Structure fixes: use Copilot with PROJECT_STRUCTURE.md and templates/data_layout.txt to create missing dirs/files and minimal config/models.yaml and config/prompts.yaml.
+3) Structure fixes: use Copilot with PROJECT_STRUCTURE.md and
+    templates/data_layout.txt to create missing dirs/files and minimal
+    config/models.yaml and config/prompts.yaml.
 
-4) Prompts: move inline prompts into config/prompts.yaml; then rewire code to load prompts by id instead of hard-coded strings.
+4) Prompts: move inline prompts into config/prompts.yaml; then rewire code to
+    load prompts by id instead of hard-coded strings.
 
-5) LLM usage: replace direct provider calls with standard clients (one per provider) that load prompts/models from config.
+5) LLM usage: replace direct provider calls with standard clients (one per
+    provider) that load prompts/models from config.
 
-6) Data layout: write outputs under data/outputs with metadata (run_id, model, prompt_id, timestamp) and standard naming.
+6) Data layout: write outputs under data/outputs with metadata (run_id, model,
+   prompt_id, timestamp) and standard naming.
 
-7) Tooling/CI: adapt pre-commit, ruff/mypy/pytest, and CI to the project; keep scope to languages actually used.
+7) Tooling/CI: adapt pre-commit, ruff/mypy/pytest, and CI to the project;
+    keep scope to languages actually used.
 
-8) Docs: align README and local docs (AI_PROMPTING_STANDARDS, COPILOT_USAGE, PROJECT_STRUCTURE) with standards, keeping content project-specific.
+8) Docs: align README and local docs (AI_PROMPTING_STANDARDS, COPILOT_USAGE,
+   PROJECT_STRUCTURE) with standards, keeping content project-specific.
 
-9) Master check: once a consolidated checker exists, run it, fix one failing category at a time, and iterate until green.
+9) Master check: once a consolidated checker exists, run it, fix one failing
+    category at a time, and iterate until green.
 """
 
+
 def resolve_tasks(standards_root: Path) -> list[AuditTask]:
-    """Return tasks with commands rooted to the standards repo, preserving placeholders."""
+    """Return tasks with commands rooted to the standards repo, preserving placeholders.
+
+    Args:
+        standards_root: Path to the AI-Core-Standards repo containing scripts/.
+
+    Returns:
+        Task list with commands/paths rewritten relative to standards_root.
+    """
     resolved: list[AuditTask] = []
     for task in KNOWN_TASKS:
         cmd = None
@@ -174,7 +194,16 @@ def resolve_tasks(standards_root: Path) -> list[AuditTask]:
 
 
 def run_task(task: AuditTask, *, cwd: Path, dry_run: bool = False) -> TaskResult:
-    """Run a single task command, capturing output and exit code."""
+    """Run a single task command, capturing output and exit code.
+
+    Args:
+        task: Task to run.
+        cwd: Working directory to run the task in (target repo root).
+        dry_run: If True, do not execute; return a skipped TaskResult.
+
+    Returns:
+        TaskResult containing status, stdout/stderr, and exit code.
+    """
     if task.command is None or (task.path is not None and not task.path.exists()):
         return TaskResult(task=task, status="missing", exit_code=None, stdout="", stderr="")
 
@@ -183,11 +212,21 @@ def run_task(task: AuditTask, *, cwd: Path, dry_run: bool = False) -> TaskResult
 
     proc = subprocess.run(task.command, capture_output=True, text=True, cwd=cwd)
     status = "ok" if proc.returncode == 0 else "fail"
-    return TaskResult(task=task, status=status, exit_code=proc.returncode, stdout=proc.stdout, stderr=proc.stderr)
+    return TaskResult(
+        task=task, status=status, exit_code=proc.returncode, stdout=proc.stdout, stderr=proc.stderr
+    )
 
 
 def filter_tasks(tasks: Iterable[AuditTask], only: Sequence[str] | None) -> list[AuditTask]:
-    """Filter tasks by comma-separated keys (or return all if not provided)."""
+    """Filter tasks by comma-separated keys (or return all if not provided).
+
+    Args:
+        tasks: Task sequence to filter.
+        only: Optional list of task keys to include.
+
+    Returns:
+        Filtered task list.
+    """
     if not only:
         return list(tasks)
     only_set = set(only)
@@ -195,7 +234,14 @@ def filter_tasks(tasks: Iterable[AuditTask], only: Sequence[str] | None) -> list
 
 
 def summarize(results: list[TaskResult]) -> str:
-    """Return a compact markdown table summarizing task results."""
+    """Return a compact markdown table summarizing task results.
+
+    Args:
+        results: Task results to summarize.
+
+    Returns:
+        A markdown table as a string.
+    """
     lines = ["Task Key | Status | Exit | Notes", "--------|--------|------|------"]
     for result in results:
         note = ""
@@ -204,13 +250,23 @@ def summarize(results: list[TaskResult]) -> str:
         elif result.status == "skipped":
             note = "dry-run"
         elif result.is_failure:
-            note = (result.stderr or result.stdout).strip().splitlines()[0] if (result.stderr or result.stdout) else "failed"
-        lines.append(f"{result.task.key} | {result.status} | {result.exit_code if result.exit_code is not None else '-'} | {note}")
+            note = (
+                (result.stderr or result.stdout).strip().splitlines()[0]
+                if (result.stderr or result.stdout)
+                else "failed"
+            )
+        exit_code_str = str(result.exit_code) if result.exit_code is not None else "-"
+        lines.append(f"{result.task.key} | {result.status} | {exit_code_str} | {note}")
     return "\n".join(lines)
 
 
 def write_plan(path: Path, results: list[TaskResult]) -> None:
-    """Write a markdown remediation plan capturing outputs/errors per task."""
+    """Write a markdown remediation plan capturing outputs/errors per task.
+
+    Args:
+        path: Output file path.
+        results: Task results to include.
+    """
     lines: list[str] = ["# Audit Remediation Plan", ""]
     for res in results:
         lines.append(f"## {res.task.title} ({res.task.key})")
@@ -235,30 +291,79 @@ def run_sequence(
     target_root: Path,
     dry_run: bool,
 ) -> list[TaskResult]:
-    """Run the selected tasks sequentially and return results."""
+    """Run the selected tasks sequentially and return results.
+
+    Args:
+        tasks: Tasks to run.
+        target_root: Working directory where tasks are executed.
+        dry_run: If True, do not execute commands.
+
+    Returns:
+        List of TaskResult entries.
+    """
     return [run_task(task, cwd=target_root, dry_run=dry_run) for task in tasks]
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build the CLI argument parser."""
-    parser = argparse.ArgumentParser(description="Run or list AI Core Standards audit remediation tasks.")
+    """Build the CLI argument parser.
+
+    Returns:
+        Configured argument parser.
+    """
+    parser = argparse.ArgumentParser(
+        description="Run or list AI Core Standards audit remediation tasks."
+    )
     parser.add_argument("--list", action="store_true", help="List tasks and exit")
     parser.add_argument("--run", action="store_true", help="Run tasks (default: list only)")
     parser.add_argument("--only", help="Comma-separated task keys to run (e.g., structure,schema)")
-    parser.add_argument("--dry-run", action="store_true", help="Do not execute commands; show what would run")
-    parser.add_argument("--fail-on-missing", action="store_true", help="Return non-zero if any requested task is missing")
-    parser.add_argument("--guide", action="store_true", help="Print remediation workflow guidance and exit")
-    parser.add_argument("--standards-root", type=Path, help="Path to the standards repo containing audit scripts")
-    parser.add_argument("--target-root", type=Path, help="Path to the target project to audit (defaults to current repo)")
-    parser.add_argument("--plan-path", type=Path, help="Where to write the remediation plan (default: target_root/fix_audit_plan.md)")
-    parser.add_argument("--loop", action="store_true", help="Re-run audits up to max iterations until success")
-    parser.add_argument("--max-iterations", type=int, default=3, help="Max iterations when --loop is set (default: 3)")
-    parser.add_argument("--skip-plan", action="store_true", help="Do not write remediation plan file")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Do not execute commands; show what would run"
+    )
+    parser.add_argument(
+        "--fail-on-missing",
+        action="store_true",
+        help="Return non-zero if any requested task is missing",
+    )
+    parser.add_argument(
+        "--guide", action="store_true", help="Print remediation workflow guidance and exit"
+    )
+    parser.add_argument(
+        "--standards-root", type=Path, help="Path to the standards repo containing audit scripts"
+    )
+    parser.add_argument(
+        "--target-root",
+        type=Path,
+        help="Path to the target project to audit (defaults to current repo)",
+    )
+    parser.add_argument(
+        "--plan-path",
+        type=Path,
+        help="Where to write the remediation plan (default: target_root/fix_audit_plan.md)",
+    )
+    parser.add_argument(
+        "--loop", action="store_true", help="Re-run audits up to max iterations until success"
+    )
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=3,
+        help="Max iterations when --loop is set (default: 3)",
+    )
+    parser.add_argument(
+        "--skip-plan", action="store_true", help="Do not write remediation plan file"
+    )
     return parser
 
 
 def _determine_roots(args: argparse.Namespace) -> tuple[Path, Path, Path]:
-    """Resolve repo/standards/target roots based on CLI args."""
+    """Resolve repo/standards/target roots based on CLI args.
+
+    Args:
+        args: Parsed CLI arguments.
+
+    Returns:
+        Tuple of (repo_root, standards_root, target_root).
+    """
     repo_root = Path(__file__).resolve().parents[1]
     standards_root = args.standards_root.resolve() if args.standards_root else repo_root
     target_root = args.target_root.resolve() if args.target_root else repo_root
@@ -266,13 +371,25 @@ def _determine_roots(args: argparse.Namespace) -> tuple[Path, Path, Path]:
 
 
 def _maybe_list_tasks(selected: list[AuditTask], args: argparse.Namespace) -> int | None:
-    """Handle --guide/--list modes and return an exit code when applicable."""
+    """Handle --guide/--list modes and return an exit code when applicable.
+
+    Args:
+        selected: Selected tasks.
+        args: Parsed CLI arguments.
+
+    Returns:
+        Exit code when a list/guide/help action was performed; otherwise None.
+    """
     if args.guide:
         print(WORKFLOW_GUIDE)
         return 0
     if args.list and not args.run:
         for task in selected:
-            availability = "missing" if (task.command is None or (task.path and not task.path.exists())) else "available"
+            availability = (
+                "missing"
+                if (task.command is None or (task.path and not task.path.exists()))
+                else "available"
+            )
             print(f"{task.key:15s} {availability:10s} - {task.title}")
         return 0
     if not args.run:
@@ -318,7 +435,14 @@ def _exit_code(results: list[TaskResult], *, fail_on_missing: bool) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv sequence.
+
+    Returns:
+        Process exit code.
+    """
     parser = _build_parser()
     args = parser.parse_args(argv)
     _, standards_root, target_root = _determine_roots(args)

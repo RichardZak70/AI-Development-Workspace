@@ -8,5 +8,7 @@ interrogate==1.7.0
 mypy==1.19.0
 pre-commit==4.5.1
 pytest==9.0.1
+pydoclint==0.8.3
 ruff==0.14.8
+types-PyYAML==6.0.12.20250915
 yamllint==1.37.1

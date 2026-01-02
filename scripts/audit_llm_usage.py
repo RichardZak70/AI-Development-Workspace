@@ -9,7 +9,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
 
-
 # File types to scan
 SCAN_EXTENSIONS: set[str] = {".py", ".ts", ".tsx", ".js"}
 
@@ -28,10 +27,19 @@ IGNORE_DIRS: set[str] = {
 
 # Simple substring patterns indicating raw provider usage
 RAW_LLM_PATTERNS: list[tuple[str, str]] = [
-    ("openai.ChatCompletion.create", "Raw OpenAI ChatCompletion call; use standard client abstraction."),
+    (
+        "openai.ChatCompletion.create",
+        "Raw OpenAI ChatCompletion call; use standard client abstraction.",
+    ),
     ("openai.Completion.create", "Raw OpenAI Completion call; use standard client abstraction."),
-    ("client.chat.completions.create", "Raw Azure OpenAI chat call; use standard client abstraction."),
-    ("client.completions.create", "Raw Azure OpenAI completion call; use standard client abstraction."),
+    (
+        "client.chat.completions.create",
+        "Raw Azure OpenAI chat call; use standard client abstraction.",
+    ),
+    (
+        "client.completions.create",
+        "Raw Azure OpenAI completion call; use standard client abstraction.",
+    ),
 ]
 
 
@@ -45,7 +53,11 @@ class Finding:
     snippet: str | None = None
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this finding."""
+        """Return a JSON-serializable representation of this finding.
+
+        Returns:
+            A JSON-serializable dictionary representing this finding.
+        """
         return asdict(self)
 
 
@@ -62,7 +74,11 @@ class LlmAuditResult:
         return not self.findings
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this result."""
+        """Return a JSON-serializable representation of this result.
+
+        Returns:
+            A JSON-serializable dictionary representing this audit result.
+        """
         return {
             "target": self.target,
             "findings": [f.to_json() for f in self.findings],
@@ -71,7 +87,14 @@ class LlmAuditResult:
 
 
 def _iter_code_files(root: Path) -> Iterable[Path]:
-    """Yield code files under root, skipping ignored directories."""
+    """Yield code files under root, skipping ignored directories.
+
+    Args:
+        root: Repository root to scan.
+
+    Yields:
+        Paths to code files that should be scanned.
+    """
     for path in root.rglob("*"):
         if not path.is_file():
             continue
@@ -95,7 +118,9 @@ def _scan_file(
             return findings
     except OSError:
         findings.append(
-            Finding(path=path_str, line=0, message="Unable to stat file for scanning.", snippet=None)
+            Finding(
+                path=path_str, line=0, message="Unable to stat file for scanning.", snippet=None
+            )
         )
         return findings
 
@@ -103,7 +128,9 @@ def _scan_file(
         text = path.read_text(encoding="utf-8")
     except OSError:
         findings.append(
-            Finding(path=path_str, line=0, message="Unable to read file for scanning.", snippet=None)
+            Finding(
+                path=path_str, line=0, message="Unable to read file for scanning.", snippet=None
+            )
         )
         return findings
 
@@ -123,7 +150,15 @@ def _scan_file(
 
 
 def audit(target_root: Path, max_size_bytes: int | None = 1_000_000) -> LlmAuditResult:
-    """Scan *target_root* for simple indicators of raw LLM provider usage."""
+    """Scan *target_root* for simple indicators of raw LLM provider usage.
+
+    Args:
+        target_root: Target repository root.
+        max_size_bytes: Maximum file size to scan; larger files are skipped.
+
+    Returns:
+        LlmAuditResult containing any findings.
+    """
     findings: list[Finding] = []
     for file_path in _iter_code_files(target_root):
         findings.extend(_scan_file(file_path, RAW_LLM_PATTERNS, max_size_bytes=max_size_bytes))
@@ -131,7 +166,11 @@ def audit(target_root: Path, max_size_bytes: int | None = 1_000_000) -> LlmAudit
 
 
 def print_human(result: LlmAuditResult) -> None:
-    """Print a human-readable summary of findings."""
+    """Print a human-readable summary of findings.
+
+    Args:
+        result: Audit result to render.
+    """
     print(f"Auditing LLM usage in: {result.target}\n")
 
     if not result.findings:
@@ -144,13 +183,24 @@ def print_human(result: LlmAuditResult) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for the LLM usage audit."""
+    """Parse CLI arguments for the LLM usage audit.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Parsed CLI arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="audit_llm_usage",
         description="Audit LLM usage for standardized client and prompt handling.",
     )
-    parser.add_argument("--target-root", type=Path, default=Path("."), help="Path to target repo root")
-    parser.add_argument("--json", action="store_true", help="Emit JSON instead of human-readable output")
+    parser.add_argument(
+        "--target-root", type=Path, default=Path("."), help="Path to target repo root"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit JSON instead of human-readable output"
+    )
     parser.add_argument("--report", type=Path, help="Where to write the audit report (JSON)")
     parser.add_argument(
         "--max-size-bytes",
@@ -162,7 +212,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
     target_root = args.target_root.resolve()
 

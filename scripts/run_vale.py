@@ -118,7 +118,11 @@ def _extract_archive(archive: Path, install_dir: Path) -> Path:
 
 
 def ensure_vale() -> Path:
-    """Ensure the pinned Vale binary is installed locally and return its path."""
+    """Ensure the pinned Vale binary is installed locally.
+
+    Returns:
+        Path to the Vale executable.
+    """
     exe = TOOLS_DIR / ("vale.exe" if os.name == "nt" else "vale")
     if exe.exists():
         return exe
@@ -133,8 +137,7 @@ def ensure_vale() -> Path:
     actual = _sha256(archive)
     if actual.lower() != expected.lower():
         raise RuntimeError(
-            "Vale download checksum mismatch. "
-            f"expected={expected} actual={actual} file={archive}"
+            f"Vale download checksum mismatch. expected={expected} actual={actual} file={archive}"
         )
 
     extracted_exe = _extract_archive(archive, TOOLS_DIR)
@@ -146,7 +149,11 @@ def ensure_vale() -> Path:
 
 
 def main() -> int:
-    """Run Vale against README.md and docs/ using the repo's .vale.ini."""
+    """Run Vale against README.md and docs/ using the repo's .vale.ini.
+
+    Returns:
+        Vale process exit code.
+    """
     exe = ensure_vale()
     config = REPO_ROOT / ".vale.ini"
     if not config.exists():

@@ -1,7 +1,9 @@
+"""Tests for auditing raw LLM provider usage patterns."""
+
 import importlib
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -23,6 +25,7 @@ def _write(path: Path, text: str) -> None:
 
 
 def test_compliant_when_no_raw_calls(tmp_path: Path) -> None:
+    """Audit passes when no raw provider patterns are present."""
     code = """from client import llm
 resp = llm.invoke(prompt_id="hello")
 """
@@ -35,6 +38,7 @@ resp = llm.invoke(prompt_id="hello")
 
 
 def test_flags_raw_openai_call(tmp_path: Path) -> None:
+    """Audit flags direct OpenAI SDK calls."""
     code = """import openai
 resp = openai.ChatCompletion.create(model="gpt-4", messages=[])
 """
@@ -50,6 +54,7 @@ resp = openai.ChatCompletion.create(model="gpt-4", messages=[])
 
 
 def test_flags_raw_azure_call(tmp_path: Path) -> None:
+    """Audit flags direct Azure OpenAI client calls."""
     code = """from azure.ai import openai
 resp = client.chat.completions.create(model="gpt-4o", messages=[])
 """
@@ -69,6 +74,7 @@ resp = client.chat.completions.create(model="gpt-4o", messages=[])
 
 
 def test_json_round_trip(tmp_path: Path) -> None:
+    """Audit result serializes cleanly to JSON."""
     code = """import openai
 resp = openai.Completion.create(model="gpt-3", prompt="hi")
 """
@@ -86,6 +92,7 @@ resp = openai.Completion.create(model="gpt-3", prompt="hi")
 
 
 def test_only_scans_known_extensions(tmp_path: Path) -> None:
+    """Audit scans only configured file extensions."""
     _write(tmp_path / "notes" / "llm.txt", "openai.ChatCompletion.create()")
     _write(tmp_path / "src" / "llm.py", "print('ok')")
 
@@ -97,6 +104,7 @@ def test_only_scans_known_extensions(tmp_path: Path) -> None:
 
 
 def test_skips_ignored_directories(tmp_path: Path) -> None:
+    """Audit skips configured ignored directories."""
     if not IGNORE_DIRS:
         pytest.skip("IGNORE_DIRS not defined in audit_llm_usage module.")
 
@@ -111,6 +119,7 @@ def test_skips_ignored_directories(tmp_path: Path) -> None:
 
 
 def test_respects_max_size_bytes(tmp_path: Path) -> None:
+    """Audit skips files larger than max_size_bytes."""
     big_file = tmp_path / "src" / "big.py"
     big_file.parent.mkdir(parents=True, exist_ok=True)
     big_file.write_bytes(b"#" * (2_000_000))
@@ -123,6 +132,7 @@ def test_respects_max_size_bytes(tmp_path: Path) -> None:
 
 
 def test_patterns_exposed_for_coverage() -> None:
+    """Module exports patterns and extensions for coverage and reuse."""
     # Ensure exported patterns/extensions are non-empty for sanity
     assert RAW_LLM_PATTERNS
     assert SCAN_EXTENSIONS

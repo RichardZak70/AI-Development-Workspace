@@ -41,12 +41,12 @@ jobs:
         run: python -m yamllint .
 
       - name: Run ruff
-        run: python -m ruff check scripts tests
+        run: python -m ruff check . --output-format=full
 
-      - name: Run darglint (docstring structure)
+      - name: Run pydoclint (docstring structure)
         run: |
-          python -m pip show darglint
-          darglint -s google -z short --ignore-regex '^_' scripts
+          python -m pip show pydoclint
+          pydoclint --style google --skip-checking-short-docstrings False --arg-type-hints-in-docstring False --check-class-attributes False --skip-checking-raises True --check-return-types False --check-yield-types False scripts
 
       - name: Run interrogate (doc coverage)
         run: |

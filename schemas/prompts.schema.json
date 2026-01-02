@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": {
     "type": "object",
-    "required": ["system", "user_template"],
+    "required": ["description", "system", "user_template"],
     "additionalProperties": false,
     "properties": {
       "description": { "type": "string", "minLength": 1 },

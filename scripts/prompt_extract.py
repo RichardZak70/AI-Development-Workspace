@@ -40,7 +40,11 @@ class PromptFinding:
     value: str
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this finding."""
+        """Return a JSON-serializable representation of this finding.
+
+        Returns:
+            A JSON-serializable dictionary representing this finding.
+        """
         return asdict(self)
 
 
@@ -58,7 +62,11 @@ class PromptExtractionResult:
         return True
 
     def to_json(self) -> dict[str, object]:
-        """Return a JSON-serializable representation of this report."""
+        """Return a JSON-serializable representation of this report.
+
+        Returns:
+            A JSON-serializable dictionary representing this report.
+        """
         return {
             "target": self.target,
             "prompts": [p.to_json() for p in self.prompts],
@@ -78,6 +86,12 @@ def _extract_string(node: ast.expr) -> str | None:
     - Constant strings
     - Concatenated strings via +
     - f-strings (expressions replaced with {...})
+
+    Args:
+        node: AST expression to reduce.
+
+    Returns:
+        String if the expression can be reduced; otherwise None.
     """
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
@@ -154,7 +168,16 @@ def extract_prompts(
     extensions: Sequence[str] = (".py",),
     min_length: int = 40,
 ) -> PromptExtractionResult:
-    """Extract likely prompt variables from code under *target_root*."""
+    """Extract likely prompt variables from code under *target_root*.
+
+    Args:
+        target_root: Target repository root.
+        extensions: File extensions to scan.
+        min_length: Minimum length for extracted prompt strings.
+
+    Returns:
+        PromptExtractionResult containing extracted prompt findings.
+    """
     findings: list[PromptFinding] = []
     for file_path in _iter_code_files(target_root, extensions):
         try:
@@ -176,7 +199,11 @@ def extract_prompts(
 
 
 def print_human(result: PromptExtractionResult) -> None:
-    """Print a human-readable prompt extraction summary."""
+    """Print a human-readable prompt extraction summary.
+
+    Args:
+        result: Prompt extraction result to render.
+    """
     print(f"Extracting prompts from: {result.target}\n")
     if not result.prompts:
         print("No inline prompts found.")
@@ -191,13 +218,28 @@ def print_human(result: PromptExtractionResult) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for prompt extraction."""
-    parser = argparse.ArgumentParser(prog="prompt_extract", description="Extract inline prompts into a report.")
-    parser.add_argument("--target-root", type=Path, default=Path("."), help="Path to target repo root")
-    parser.add_argument("--json", action="store_true", help="Emit JSON instead of human-readable output")
+    """Parse CLI arguments for prompt extraction.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Parsed CLI arguments.
+    """
+    parser = argparse.ArgumentParser(
+        prog="prompt_extract", description="Extract inline prompts into a report."
+    )
+    parser.add_argument(
+        "--target-root", type=Path, default=Path("."), help="Path to target repo root"
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit JSON instead of human-readable output"
+    )
     parser.add_argument("--yaml", action="store_true", help="Emit prompts.yaml skeleton to stdout")
     parser.add_argument("--report", type=Path, help="Where to write the extraction report (JSON)")
-    parser.add_argument("--min-length", type=int, default=40, help="Minimum prompt length to include")
+    parser.add_argument(
+        "--min-length", type=int, default=40, help="Minimum prompt length to include"
+    )
     parser.add_argument(
         "--extensions",
         type=str,
@@ -208,7 +250,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """CLI entry point.
+
+    Args:
+        argv: Optional argv list.
+
+    Returns:
+        Process exit code.
+    """
     args = parse_args(argv)
     target_root = args.target_root.resolve()
     exts = tuple(ext.strip() for ext in args.extensions.split(",") if ext.strip())
@@ -225,9 +274,11 @@ def main(argv: list[str] | None = None) -> int:
         for idx, finding in enumerate(result.prompts, start=1):
             key = f"prompt_{idx}"
             yaml_lines.append(f"  {key}:")
+            yaml_lines.append("    description: TODO")
             yaml_lines.append("    system: |")
             for line in finding.value.splitlines() or [""]:
                 yaml_lines.append(f"      {line}")
+            yaml_lines.append("    user_template: TODO")
             yaml_lines.append(f"    _source: {finding.path}:{finding.line} ({finding.var_name})")
         print("\n".join(yaml_lines))
     elif args.json:
